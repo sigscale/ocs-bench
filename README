@@ -1,0 +1,22 @@
+# SigScale OCS benchmarking tests (ocs_bench)
+
+## Prerequisites
+	$ sudo apt install erlang
+
+## Building
+	$ mkdir ../ocs_bench.build  (create build directory)
+	$ cd ../ocs_bench.build     (change working directory for build)
+	$ ../ocs_bench/configure    (creates Makefiles)
+	$ make                      (builds entire package)
+	$ make check                (run dialyzer and common_test)
+
+## Installing
+	$ sudo make install         (installs embedded application in system)
+
+## Cleaning
+	$ make clean                (removes files created with make)
+	$ make distclean            (removes files created with configure also)
+
+## Options
+	$ ../ocs_bench/configure --enable-debug
+

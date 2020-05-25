@@ -1,0 +1,11 @@
+{application, %APP_NAME%,
+	[{description, "SigScale OCS benchmark testing"},
+	{vsn, "%APP_VERSION%"},
+	{modules,
+			[ocs_bench_app,
+			ocs_bench_sup]},
+	{registered, []},
+	{applications, []},
+	{env, []},
+	{mod, {ocs_bench_app, []}}]}.
+
