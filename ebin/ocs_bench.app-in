@@ -3,8 +3,10 @@
 	{vsn, "%APP_VERSION%"},
 	{modules,
 			[ocs_bench_app,
-			ocs_bench_sup]},
-	{registered, []},
+			ocs_bench_sup,
+			ocs_bench_fsm_sup,
+			ocs_bench_fsm]},
+	{registered, [ocs_bench_fsm_sup]},
 	{applications, []},
 	{env, []},
 	{mod, {ocs_bench_app, []}}]}.

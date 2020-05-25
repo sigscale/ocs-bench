@@ -4,7 +4,9 @@
 ## Process this file with automake to produce Makefile.in
 
 modhtml = ocs_bench_app.html \
-		ocs_bench_sup.html
+		ocs_bench_sup.html \
+		ocs_bench_fsm_sup.html \
+		ocs_bench_fsm.html
 
 doc_DATA = overview.edoc $(modhtml) \
 		modules-frame.html overview-summary.html \

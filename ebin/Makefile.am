@@ -8,7 +8,9 @@ app_DATA = ocs_bench.app
 EXTRA_DIST = ocs_bench.app
 
 beam_DATA = ocs_bench_app.beam \
-		ocs_bench_sup.beam
+		ocs_bench_sup.beam \
+		ocs_bench_fsm_sup.beam \
+		ocs_bench_fsm.beam
 
 %.beam:$(top_srcdir)/src/%.erl
 	$(ERLC) $(ERLCFLAGS) $<
