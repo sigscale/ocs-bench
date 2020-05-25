@@ -12,8 +12,8 @@
 			ocs_bench_diameter_ro_fsm_sup]},
 	{applications, []},
 	{env,
-			[active,
-			mean,
-			deviation]},
+			[{active, 1000},
+			{mean, 1},
+			{deviation, 10}]},
 	{mod, {ocs_bench_app, []}}]}.
 
