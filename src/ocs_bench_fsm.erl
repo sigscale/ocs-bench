@@ -38,7 +38,8 @@
 -record(statedata,
 		{active :: pos_integer(),
 		mean :: pos_integer(),
-		deviation :: 0..100}).
+		deviation :: 0..100,
+		service :: term()}).
 -type statedata() :: #statedata{}.
 
 %%----------------------------------------------------------------------
@@ -77,8 +78,9 @@ init(_Args) ->
 	{ok, Active} = application:get_env(active),
 	{ok, Mean} = application:get_env(mean),
 	{ok, Deviation} = application:get_env(deviation),
+	[Service] = diameter:get_services(),
 	{ok, transaction, #statedata{active = Active, mean = Mean,
-					deviation = Deviation}, rand:uniform(4000)}.
+			deviation = Deviation, service = Service}, rand:uniform(4000)}.
 
 -spec transaction(EventType, EventContent, Data) -> Result
 	when

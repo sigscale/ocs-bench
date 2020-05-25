@@ -8,6 +8,9 @@
 			ocs_bench_fsm]},
 	{registered, [ocs_bench_fsm_sup]},
 	{applications, []},
-	{env, []},
+	{env,
+			[active,
+			mean,
+			deviation]},
 	{mod, {ocs_bench_app, []}}]}.
 
