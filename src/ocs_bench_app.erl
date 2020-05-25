@@ -45,12 +45,7 @@
 		Reason :: term().
 %% @doc Starts the application processes.
 start(normal = _StartType, _Args) ->
-	case supervisor:start_link(ocs_bench_sup, []) of
-		{ok, TopSup} ->
-			TopSup;
-		{error, Reason} ->
-			{error, Reason}
-	end.
+	supervisor:start_link(ocs_bench_sup, []).
 
 -spec start_phase(Phase, StartType, PhaseArgs) -> Result
 	when
