@@ -55,7 +55,7 @@
 %%
 init([Sup] = _Args) ->
 	process_flag(trap_exit, true),
-	{ok, #state{sup = Sup}, 0}.
+	{ok, #state{sup = Sup}}.
 
 -spec handle_call(Request, From, State) -> Result
 	when
