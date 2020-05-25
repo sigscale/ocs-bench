@@ -1,4 +1,4 @@
-%%% ocs_bench_fsm_sup.erl
+%%% ocs_bench_diameter_ro_fsm_sup.erl
 %%% vim: ts=3
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% @copyright 2020 SigScale Global Inc.
@@ -17,7 +17,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% @docfile "{@docsrc supervision.edoc}"
 %%%
--module(ocs_bench_fsm_sup).
+-module(ocs_bench_diameter_ro_fsm_sup).
 -copyright('Copyright (c) 2020 SigScale Global Inc.').
 
 -behaviour(supervisor).
@@ -39,8 +39,8 @@
 %% @private
 %%
 init([] = _Args) ->
-	ChildSpecs = [fsm(ocs_bench_fsm)],
-	{ok, {{simple_one_for_one, 5, 60}, ChildSpecs}}.
+	ChildSpecs = [fsm(ocs_bench_diameter_ro_fsm)],
+	{ok, {{simple_one_for_one, 1, 5}, ChildSpecs}}.
 
 %%----------------------------------------------------------------------
 %%  internal functions

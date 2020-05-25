@@ -1,4 +1,4 @@
-%%% ocs_bench_fsm.erl
+%%% ocs_bench_diameter_ro_fsm.erl
 %%% vim: ts=3
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% @copyright 2020 SigScale Global Inc.
@@ -16,15 +16,15 @@
 %%% limitations under the License.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% @doc This {@link //stdlib/gen_statem. gen_statem} behaviour callback
-%%% 	module implements a worker in the
+%%% 	module implements a transaction handler for DIAMETER Ro in the
 %%% 	{@link //ocs_bench. ocs_bench} application.
 %%%
--module(ocs_bench_fsm).
+-module(ocs_bench_diameter_ro_fsm).
 -copyright('Copyright (c) 2020 SigScale Global Inc.').
 
 -behaviour(gen_statem).
 
-%% export the ocs_bench_fsm API
+%% export the ocs_bench_diameter_ro_fsm API
 -export([]).
 
 %% export the callbacks needed for gen_statem behaviour
@@ -43,11 +43,11 @@
 -type statedata() :: #statedata{}.
 
 %%----------------------------------------------------------------------
-%%  The ocs_bench_fsm API
+%%  The ocs_bench_diameter_ro_fsm API
 %%----------------------------------------------------------------------
 
 %%----------------------------------------------------------------------
-%%  The ocs_bench_fsm gen_statem callbacks
+%%  The ocs_bench_diameter_ro_fsm gen_statem callbacks
 %%----------------------------------------------------------------------
 
 -spec callback_mode() -> Result

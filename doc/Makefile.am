@@ -5,8 +5,8 @@
 
 modhtml = ocs_bench_app.html \
 		ocs_bench_sup.html \
-		ocs_bench_fsm_sup.html \
-		ocs_bench_fsm.html
+		ocs_bench_diameter_ro_fsm_sup.html \
+		ocs_bench_diameter_ro_fsm.html
 
 doc_DATA = overview.edoc $(modhtml) \
 		modules-frame.html overview-summary.html \

@@ -39,8 +39,9 @@
 %% @private
 %%
 init([] = _Args) ->
-	ChildSpecs = [supervisor(ocs_bench_fsm_sup, ocs_bench_fsm_sup, [])],
-	{ok, {{one_for_one, 10, 60}, ChildSpecs}}.
+	ChildSpecs = [supervisor(ocs_bench_diameter_ro_fsm_sup,
+			ocs_bench_diameter_ro_fsm_sup, [])],
+	{ok, {{one_for_all, 1, 5}, ChildSpecs}}.
 
 %%----------------------------------------------------------------------
 %%  internal functions
