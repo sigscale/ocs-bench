@@ -1,4 +1,4 @@
-%%% ocs_bench_diameter_ro_cb.erl 
+%%% ocs_bench_diameter_ro_cb.erl
 %%% vim: ts=3
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% @copyright 2020 SigScale Global Inc.
@@ -56,7 +56,7 @@
 		Peer ::  peer(),
 		State :: state(),
 		NewState :: state().
-%% @doc Invoked when the peer connection is available
+%% @doc Invoked when the peer connection is available.
 peer_up(_ServiceName, _Peer, State) ->
     State.
 
@@ -66,7 +66,7 @@ peer_up(_ServiceName, _Peer, State) ->
 		Peer :: peer(),
 		State :: state(),
 		NewState :: state().
-%% @doc Invoked when the peer connection is not available
+%% @doc Invoked when the peer connection is not available.
 peer_down(_ServiceName, _Peer, State) ->
     State.
 
@@ -82,8 +82,8 @@ peer_down(_ServiceName, _Peer, State) ->
 		Selection :: {ok, Peer} | {Peer, NewState},
 		Peer :: peer() | false,
 		Result :: Selection | false.
-%% @doc Invoked as a consequence of a call to diameter:call/4 to select
-%% 	a destination peer for an outgoing request. 
+%% @doc Invoked as a consequence of a call to diameter:call/4 to select.
+%% 	a destination peer for an outgoing request.
 pick_peer([Peer | _] = _LocalCandidates, _RemoteCandidates,
 		_ServiceName, _State, _Fsm) ->
 	{ok, Peer}.
@@ -99,7 +99,7 @@ pick_peer([Peer | _] = _LocalCandidates, _RemoteCandidates,
 		Discard :: {discard, Reason} | discard,
 		Reason :: term(),
 		PostF :: diameter:evaluable().
-%% @doc Invoked to return a request for encoding and transport 
+%% @doc Invoked to return a request for encoding and transport.
 prepare_request(#diameter_packet{} = Packet, _ServiceName, _Peer, _Fsm) ->
 	{send, Packet}.
 
@@ -144,7 +144,7 @@ handle_answer(#diameter_packet{msg = Answer, errors = Errors} = _Packet,
 		Peer :: peer(),
 		Fsm :: pid(),
 		Result :: term().
-%% @doc Invoked when an error occurs before an answer message is received
+%% @doc Invoked when an error occurs before an answer message is received.
 %% 	in response to an outgoing request.
 handle_error(Reason, _Request, _ServiceName, _Peer, Fsm) ->
     gen_statem:cast(Fsm, {error, Reason}).

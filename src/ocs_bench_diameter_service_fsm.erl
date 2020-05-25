@@ -30,7 +30,7 @@
 %% export the callbacks needed for gen_statem behaviour
 -export([init/1, handle_event/4, callback_mode/0,
 			terminate/3, code_change/4]).
-%% export the callbacks for gen_statem states. 
+%% export the callbacks for gen_statem states.
 -export([wait_for_start/3, wait_for_peer/3, connected/3]).
 
 -include_lib("diameter/include/diameter.hrl").
@@ -192,7 +192,7 @@ connected(info, #diameter_event{info = stop, service = Service},
 		State :: state(),
 		Data :: statedata(),
 		Result :: gen_statem:event_handler_result(State).
-%% @doc Handles events received in the any state.
+%% @doc Handles events received in any state.
 %% @private
 %%
 handle_event(_EventType, _EventContent, State, Data) ->
@@ -248,7 +248,7 @@ code_change(_OldVsn, OldState, OldData, _Extra) ->
 		Address :: inet:ip_address(),
 		Port :: inet:port_number(),
 		Options :: tuple().
-%% @doc Returns options for a DIAMETER transport layer
+%% @doc Returns options for a DIAMETER transport layer.
 %% @hidden
 transport_options(Transport, Address, Port) ->
 	Opts = [{transport_module, Transport},
@@ -259,7 +259,7 @@ transport_options(Transport, Address, Port) ->
 -spec service_options(Options) -> Options
 	when
 		Options :: list().
-%% @doc Returns options for a DIAMETER service
+%% @doc Returns options for a DIAMETER service.
 %% @hidden
 service_options(Options) ->
 	{ok, Vsn} = application:get_key(vsn),

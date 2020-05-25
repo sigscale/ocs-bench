@@ -30,7 +30,7 @@
 %% export the callbacks needed for gen_statem behaviour
 -export([init/1, handle_event/4, callback_mode/0,
 			terminate/3, code_change/4]).
-%% export the callbacks for gen_statem states. 
+%% export the callbacks for gen_statem states.
 -export([transaction/3]).
 
 -type state() :: transaction.
@@ -102,7 +102,7 @@ transaction(timeout = _EventType, _EventContent, #statedata{} = Data) ->
 		State :: state(),
 		Data :: statedata(),
 		Result :: gen_statem:event_handler_result(State).
-%% @doc Handles events received in the any state.
+%% @doc Handles events received in any state.
 %% @private
 %%
 handle_event(_EventType, _EventContent, State, Data) ->
