@@ -39,7 +39,8 @@
 %% @private
 %%
 init([] = _Args) ->
-	ChildSpecs = [supervisor(ocs_bench_diameter_service_fsm,
+	ChildSpecs = [server(ocs_bench_server, ocs_bench, [self()]),
+			supervisor(ocs_bench_diameter_service_fsm,
 					ocs_bench_diameter_service_fsm, []),
 			supervisor(ocs_bench_diameter_ro_fsm_sup,
 					ocs_bench_diameter_ro_fsm_sup, [])],

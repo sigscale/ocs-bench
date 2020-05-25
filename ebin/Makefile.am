@@ -11,6 +11,7 @@ beam_DATA = ocs_bench_app.beam \
 		ocs_bench_sup.beam \
 		ocs_bench_diameter_service_fsm_sup.beam \
 		ocs_bench_diameter_ro_fsm_sup.beam \
+		ocs_bench_server.beam \
 		ocs_bench_diameter_service_fsm.beam \
 		ocs_bench_diameter_ro_fsm.beam \
 		ocs_bench_diameter_ro_cb.beam

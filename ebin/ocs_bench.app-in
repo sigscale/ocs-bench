@@ -6,6 +6,7 @@
 			ocs_bench_sup,
 			ocs_bench_diameter_service_fsm_sup,
 			ocs_bench_diameter_ro_fsm_sup,
+			ocs_bench_server,
 			ocs_bench_diameter_service_fsm,
 			ocs_bench_diameter_ro_fsm,
 			ocs_bench_diameter_ro_cb]},

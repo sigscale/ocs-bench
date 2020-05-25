@@ -7,6 +7,7 @@ modhtml = ocs_bench_app.html \
 		ocs_bench_sup.html \
 		ocs_bench_diameter_service_fsm_sup.html \
 		ocs_bench_diameter_ro_fsm_sup.html \
+		ocs_bench_server.html \
 		ocs_bench_diameter_service_fsm.html \
 		ocs_bench_diameter_ro_fsm.html \
 		ocs_bench_diameter_ro_cb.html
