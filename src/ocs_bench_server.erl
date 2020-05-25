@@ -25,7 +25,7 @@
 -behaviour(gen_server).
 
 %% export the ocs_bench_server API
--export([start/1, stop/1]).
+-export([]).
 
 %% export the callbacks needed for gen_server behaviour
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
