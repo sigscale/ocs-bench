@@ -13,5 +13,6 @@
 	{diameter, "@ERLANG_LIB_VER_diameter@"},
 	{radius, "@ERLANG_LIB_VER_radius@", none},
 	{mochiweb, "@ERLANG_LIB_VER_mochiweb@", none},
+	{zj, "@ERLANG_LIB_VER_zj@"},
 	{ocs, "@ERLANG_LIB_VER_ocs@", none},
 	{@PACKAGE@, "@VERSION@"}]}.
