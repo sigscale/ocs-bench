@@ -46,7 +46,7 @@ init([] = _Args) ->
 					ocs_bench_diameter_service_fsm_sup, []),
 			supervisor(ocs_bench_diameter_ro_fsm_sup,
 					ocs_bench_diameter_ro_fsm_sup, [])],
-	{ok, {{one_for_all, 1, 5}, ChildSpecs}}.
+	{ok, {{one_for_all, 0, 1}, ChildSpecs}}.
 
 %%----------------------------------------------------------------------
 %%  internal functions

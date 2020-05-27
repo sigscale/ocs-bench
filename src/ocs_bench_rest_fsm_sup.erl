@@ -40,7 +40,7 @@
 %%
 init([] = _Args) ->
 	ChildSpecs = [fsm(ocs_bench_rest_fsm)],
-	{ok, {{simple_one_for_one, 1, 5}, ChildSpecs}}.
+	{ok, {{one_for_one, 0, 1}, ChildSpecs}}.
 
 %%----------------------------------------------------------------------
 %%  internal functions
@@ -55,7 +55,7 @@ init([] = _Args) ->
 %% @private
 %%
 fsm(StartMod) ->
-	StartArgs = [StartMod],
+	StartArgs = [StartMod, [], []],
 	StartFunc = {gen_statem, start_link, StartArgs},
-	{StartMod, StartFunc, permanent, 4000, worker, [StartMod]}.
+	{StartMod, StartFunc, transient, 4000, worker, [StartMod]}.
 
