@@ -97,7 +97,8 @@ init(_Args) ->
 	Data = #statedata{active = Active, mean = Mean,
 			deviation = Deviation, uri = Uri,
 			auth = Authorization},
-	{ok, client_request, Data, rand:uniform(4000)}.
+	{ok, client_request, Data,
+			[{state_timeout, rand:uniform(4000), start}]}.
 
 -spec client_request(EventType, EventContent, Data) -> Result
 	when
@@ -108,9 +109,8 @@ init(_Args) ->
 %% @doc Handles events received in the <em>wait_request</em> state.
 %% @private
 %%
-client_request(timeout = _EventType, _EventContent,
-		#statedata{address = undefined, hostname = undefined,
-		uri = Uri, auth = Authorization} = Data) ->
+client_request(state_timeout = _EventType, start = _EventContent,
+		#statedata{uri = Uri, auth = Authorization} = Data) ->
 	Start = erlang:system_time(millisecond),
 	?LOG_INFO("Begin phase 0: add REST client"),
 	{ok, Hostname} = inet:gethostname(),
@@ -131,10 +131,9 @@ client_request(timeout = _EventType, _EventContent,
 		{error, Reason} ->
 			{stop, Reason, Data}
 	end;
-client_request(timeout = _EventType, _EventContent,
-		#statedata{address = Address, hostname = Hostname,
-		uri = Uri, auth = Authorization} = Data)
-		when is_tuple(Address), is_list(Hostname) ->
+client_request(state_timeout, post,
+		#statedata{address = Address, uri = Uri,
+		auth = Authorization} = Data) ->
 	Start = erlang:system_time(millisecond),
 	Id = inet:ntoa(Address),
 	Path = Uri ++ "/ocs/v1/client",
@@ -149,9 +148,7 @@ client_request(timeout = _EventType, _EventContent,
 			{next_state, client_response, NewData};
 		{error, Reason} ->
 			{stop, Reason, Data}
-	end;
-client_request(_EventType, _EventContent, _Data) ->
-keep_state_and_data.
+	end.
 
 -spec client_response(EventType, EventContent, Data) -> Result
 	when
@@ -166,7 +163,7 @@ client_response(info = _EventType,
 		{http, {RequestId, {{_, 404, _}, _Headers, _Body}}} = _EventContent,
 		#statedata{request = RequestId, start = Start} = Data) ->
 		NewData = Data#statedata{request = undefined},
-	{next_state, client_request, NewData, timeout(Start, Data)};
+	{next_state, client_request, NewData, timeout(Start, post, Data)};
 client_response(info = _EventType,
 		{http, {RequestId, {{_, StatusCode, _}, _Headers, Body}}},
 		#statedata{request = RequestId, start = Start} = Data)
@@ -178,7 +175,8 @@ client_response(info = _EventType,
 					?LOG_INFO("End phase 0: add REST client"),
 					?LOG_INFO("Begin phase 1: add service identifiers"),
 					NewData = Data#statedata{address = Address},
-					{next_state, wait_request, NewData, timeout(Start, NewData)};
+					{next_state, wait_request, NewData,
+							timeout(Start, start, NewData)};
 				{error, Reason} ->
 					{stop, Reason, Data}
 			end;
@@ -202,7 +200,7 @@ client_response(info = _EventType, {http, {RequestId, {error, Reason}}},
 %% @doc Handles events received in the <em>wait_request</em> state.
 %% @private
 %%
-wait_request(timeout = _EventType, _EventContent,
+wait_request(state_timeout = _EventType, _EventContent,
 		#statedata{active = Active, uri = Uri, auth = Authorization} = Data) ->
 	Start = erlang:system_time(millisecond),
 	case ets:info(service, size) of
@@ -260,7 +258,7 @@ wait_response(info = _EventType,
 			case lists:foldl(F, {undefined, undefined, undefined}, Chars) of
 				{Id, K, OPc} when is_list(Id) ->
 					ets:insert(service, {Id, K, OPc}),
-					{next_state, wait_request, NewData, timeout(Start, Data)};
+					{next_state, wait_request, NewData, timeout(Start, next, Data)};
 				_ ->
 					{stop, bad_service, NewData}
 			end;
@@ -322,18 +320,22 @@ code_change(_OldVsn, OldState, OldData, _Extra) ->
 %%  internal functions
 %%----------------------------------------------------------------------
 
--spec timeout(Start, StateData) -> Timeout
+-spec timeout(Start, EventContent, Data) -> Result
 	when
 		Start :: pos_integer(),
-		StateData :: #statedata{},
-		Timeout :: pos_integer().
+		EventContent :: term(),
+		Data :: #statedata{},
+		Result :: [Action],
+		Action :: {state_timeout, Time, EventContent},
+		Time :: pos_integer().
 %% @doc Returns a timeout taking into account the time it took to
 %% 	process the current transaction, the configured `mean' rate
 %% 	and random `deviation' percentage.
 %% @hidden
-timeout(Start, #statedata{mean = Mean, deviation = Deviation}) ->
+timeout(Start, EventContent,
+		#statedata{mean = Mean, deviation = Deviation}) ->
 	End = erlang:system_time(millisecond),
-	case (1000 div Mean) - (End - Start) of
+	Time = case (1000 div Mean) - (End - Start) of
 		Interval when Interval > 0 ->
 			case (Interval * Deviation) div 100 of
 				Range when Range > 0 ->
@@ -343,7 +345,8 @@ timeout(Start, #statedata{mean = Mean, deviation = Deviation}) ->
 			end;
 		_Interval ->
 			0
-	end.
+	end,
+	[{state_timeout, Time, EventContent}].
 
 -spec imsi() -> [$0..$9].
 %% @doc Generate an IMSI.

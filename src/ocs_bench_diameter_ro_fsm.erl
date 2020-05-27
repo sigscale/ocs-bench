@@ -80,7 +80,8 @@ init(_Args) ->
 	{ok, Deviation} = application:get_env(deviation),
 	[Service] = diameter:get_services(),
 	{ok, transaction, #statedata{active = Active, mean = Mean,
-			deviation = Deviation, service = Service}, rand:uniform(4000)}.
+			deviation = Deviation, service = Service},
+			[{state_timeout, rand:uniform(4000), start}]}.
 
 -spec transaction(EventType, EventContent, Data) -> Result
 	when
@@ -91,9 +92,9 @@ init(_Args) ->
 %% @doc Handles events received in the <em>transaction</em> state.
 %% @private
 %%
-transaction(timeout = _EventType, _EventContent, #statedata{} = Data) ->
+transaction(state_timeout = _EventType, _EventContent, #statedata{} = Data) ->
 	Start = erlang:system_time(millisecond),
-	{next_state, transaction, Data, timeout(Start, Data)}.
+	{next_state, transaction, Data, timeout(Start, continue, Data)}.
 
 -spec handle_event(EventType, EventContent, State, Data) -> Result
 	when
@@ -142,18 +143,22 @@ code_change(_OldVsn, OldState, OldData, _Extra) ->
 %%  internal functions
 %%----------------------------------------------------------------------
 
--spec timeout(Start, StateData) -> Timeout
+-spec timeout(Start, EventContent, Data) -> Result
 	when
 		Start :: pos_integer(),
-		StateData :: #statedata{},
-		Timeout :: pos_integer().
+		EventContent :: term(),
+		Data :: #statedata{},
+		Result :: [Action],
+		Action :: {state_timeout, Time, EventContent},
+		Time :: pos_integer().
 %% @doc Returns a timeout taking into account the time it took to
 %% 	process the current transaction, the configured `mean' rate
 %% 	and random `deviation' percentage.
 %% @hidden
-timeout(Start, #statedata{mean = Mean, deviation = Deviation}) ->
+timeout(Start, EventContent,
+		#statedata{mean = Mean, deviation = Deviation}) ->
 	End = erlang:system_time(millisecond),
-	case (1000 div Mean) - (End - Start) of
+	Time = case (1000 div Mean) - (End - Start) of
 		Interval when Interval > 0 ->
 			case (Interval * Deviation) div 100 of
 				Range when Range > 0 ->
@@ -163,5 +168,6 @@ timeout(Start, #statedata{mean = Mean, deviation = Deviation}) ->
 			end;
 		_Interval ->
 			0
-	end.
+	end,
+	[{state_timeout, Time, EventContent}].
 
