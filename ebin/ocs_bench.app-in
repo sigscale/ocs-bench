@@ -22,5 +22,7 @@
 			[{active, 1000},
 			{mean, 1},
 			{deviation, 10},
-			{rest_uri, "http://localhost:8080"}]},
+			{rest_uri, "http://localhost:8080"},
+			{rest_user, "admin"},
+			{rest_pass, "admin"}]},
 	{mod, {ocs_bench_app, []}}]}.

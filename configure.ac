@@ -71,6 +71,7 @@ AC_ERLANG_CHECK_LIB([ssl], [], [AC_MSG_ERROR([ssl was not found!])])
 AC_ERLANG_CHECK_LIB([diameter], [], [AC_MSG_ERROR([diameter was not found!])])
 AC_ERLANG_CHECK_LIB([radius], [], [AC_MSG_ERROR([radius was not found!])])
 AC_ERLANG_CHECK_LIB([mochiweb], [], [AC_MSG_ERROR([mochiweb was not found!])])
+AC_ERLANG_CHECK_LIB([zj], [], [AC_MSG_ERROR([zj was not found!])])
 AC_ERLANG_CHECK_LIB([ocs], [], [AC_MSG_ERROR([ocs was not found!])])
 
 
