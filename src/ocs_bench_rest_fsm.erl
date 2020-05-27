@@ -31,13 +31,16 @@
 -export([init/1, handle_event/4, callback_mode/0,
 			terminate/3, code_change/4]).
 %% export the callbacks for gen_statem states.
--export([client_request/3, client_response/3, wait_request/3, wait_response/3]).
+-export([client_request/3, client_response/3,
+		service_request/3, service_response/3,
+		product_request/3, product_response/3]).
 
 -include_lib("kernel/include/logger.hrl").
 -include_lib("kernel/include/inet.hrl").
 
 -type state() :: client_request | client_response
-		| wait_request | wait_response.
+		| service_request | service_response
+		| product_request | service_response.
 
 -record(statedata,
 		{active :: pos_integer(),
@@ -48,7 +51,9 @@
 		auth :: {Athorization :: string(), BasicAuth :: string()},
 		hostname :: undefined | string(),
 		address :: undefined | inet:ip_address(),
-		request :: reference()}).
+		request :: reference(),
+		cursor :: term() | '$end_of_table',
+		count = 0 :: non_neg_integer()}).
 -type statedata() :: #statedata{}.
 
 %%----------------------------------------------------------------------
@@ -67,7 +72,7 @@
 %% @private
 %%
 callback_mode() ->
-	state_functions.
+	[state_functions, state_enter].
 
 -spec init(Args) -> Result
 	when
@@ -106,13 +111,15 @@ init(_Args) ->
 		EventContent :: term(),
 		Data :: statedata(),
 		Result :: gen_statem:event_handler_result(state()).
-%% @doc Handles events received in the <em>wait_request</em> state.
+%% @doc Handles events received in the <em>service_request</em> state.
 %% @private
 %%
+client_request(enter = _EventType, client_request = _EventContent, Data) ->
+	?LOG_INFO("Begin phase 0: add REST client"),
+	{keep_state, Data#statedata{count = 0}};
 client_request(state_timeout = _EventType, start = _EventContent,
 		#statedata{uri = Uri, auth = Authorization} = Data) ->
 	Start = erlang:system_time(millisecond),
-	?LOG_INFO("Begin phase 0: add REST client"),
 	{ok, Hostname} = inet:gethostname(),
 	case inet:gethostbyname(Hostname, inet) of
 		{ok, #hostent{h_addrtype = inet, h_addr_list = [Address | _]}} ->
@@ -159,7 +166,9 @@ client_request(state_timeout, post,
 %% @doc Handles events received in the <em>client_response</em> state.
 %% @private
 %%
-client_response(info = _EventType,
+client_response(enter = _EventType, _EventContent, _Data) ->
+	keep_state_and_data;
+client_response(info,
 		{http, {RequestId, {{_, 404, _}, _Headers, _Body}}} = _EventContent,
 		#statedata{request = RequestId, start = Start} = Data) ->
 		NewData = Data#statedata{request = undefined},
@@ -172,10 +181,9 @@ client_response(info = _EventType,
 		{ok, #{"id" := Id}} ->
 			case inet:parse_address(Id) of
 				{ok, Address} ->
-					?LOG_INFO("End phase 0: add REST client"),
-					?LOG_INFO("Begin phase 1: add service identifiers"),
+					?LOG_INFO("End phase 0: added REST client"),
 					NewData = Data#statedata{address = Address},
-					{next_state, wait_request, NewData,
+					{next_state, service_request, NewData,
 							timeout(Start, start, NewData)};
 				{error, Reason} ->
 					{stop, Reason, Data}
@@ -191,59 +199,65 @@ client_response(info = _EventType, {http, {RequestId, {error, Reason}}},
 		#statedata{request = RequestId} = Data) ->
 	{stop, Reason, Data}.
 
--spec wait_request(EventType, EventContent, Data) -> Result
+-spec service_request(EventType, EventContent, Data) -> Result
 	when
 		EventType :: gen_statem:event_type(),
 		EventContent :: term(),
 		Data :: statedata(),
 		Result :: gen_statem:event_handler_result(state()).
-%% @doc Handles events received in the <em>wait_request</em> state.
+%% @doc Handles events received in the <em>service_request</em> state.
 %% @private
 %%
-wait_request(state_timeout = _EventType, _EventContent,
-		#statedata{active = Active, uri = Uri, auth = Authorization} = Data) ->
+service_request(enter = _EventType, client_response = _EventContent, Data) ->
+	?LOG_INFO("Begin phase 1: add service identifiers"),
+	{keep_state, Data#statedata{count = 0, cursor = ets:first(service)}};
+service_request(enter, service_response, _Data) ->
+	keep_state_and_data;
+service_request(state_timeout, next,
+		#statedata{count = Count, active = Count} = Data) ->
+	?LOG_INFO("End phase 1: added ~b service identifiers", [Count]),
 	Start = erlang:system_time(millisecond),
-	case ets:info(service, size) of
-		N when N < Active ->
-			Path = Uri ++ "/serviceInventoryManagement/v2/service/",
-			ContentType = "application/json",
-			Accept = {"accept", ContentType},
-			RequestHeaders = [Authorization, Accept],
-			Chars = [#{"name" => "serviceIdentity", "value" => imsi()},
-					#{"name" => "serviceAkaK",
-						"value" => binary_to_hex(crypto:strong_rand_bytes(16))},
-					#{"name" => "serviceAkaOPc",
-						"value" => binary_to_hex(crypto:strong_rand_bytes(16))}],
-			ServiceSpecification = #{"id" => "1",
-					"href" => "/catalogManagement/v2/serviceSpecification/1"},
-			RequestBody = zj:encode(#{"serviceCharacteristic" => Chars,
-					"serviceSpecification" => ServiceSpecification}),
-			Request = {Path, RequestHeaders, ContentType, RequestBody},
-			case httpc:request(post, Request, [], [{sync, false}], tmf) of
-				{ok, RequestId} when is_reference(RequestId) ->
-					NewData = Data#statedata{request = RequestId, start = Start},
-					{next_state, wait_response, NewData};
-				{error, Reason} ->
-					{stop, Reason, Data}
-			end;
-		N ->
-			?LOG_INFO("End phase 1: added ~b service identifiers", [N]),
-			keep_state_and_data
+	{next_state, product_request, Data,  timeout(Start, start, Data)};
+service_request(state_timeout, _EventContent,
+		#statedata{uri = Uri, auth = Authorization} = Data) ->
+	Start = erlang:system_time(millisecond),
+	Path = Uri ++ "/serviceInventoryManagement/v2/service/",
+	ContentType = "application/json",
+	Accept = {"accept", ContentType},
+	RequestHeaders = [Authorization, Accept],
+	Chars = [#{"name" => "serviceIdentity", "value" => imsi()},
+			#{"name" => "serviceAkaK",
+				"value" => binary_to_hex(crypto:strong_rand_bytes(16))},
+			#{"name" => "serviceAkaOPc",
+				"value" => binary_to_hex(crypto:strong_rand_bytes(16))}],
+	ServiceSpecification = #{"id" => "1",
+			"href" => "/catalogManagement/v2/serviceSpecification/1"},
+	RequestBody = zj:encode(#{"serviceCharacteristic" => Chars,
+			"serviceSpecification" => ServiceSpecification}),
+	Request = {Path, RequestHeaders, ContentType, RequestBody},
+	case httpc:request(post, Request, [], [{sync, false}], tmf) of
+		{ok, RequestId} when is_reference(RequestId) ->
+			NewData = Data#statedata{request = RequestId, start = Start},
+			{next_state, service_response, NewData};
+		{error, Reason} ->
+			{stop, Reason, Data}
 	end.
 
--spec wait_response(EventType, EventContent, Data) -> Result
+-spec service_response(EventType, EventContent, Data) -> Result
 	when
 		EventType :: gen_statem:event_type(),
 		EventContent :: term(),
 		Data :: statedata(),
 		Result :: gen_statem:event_handler_result(state()).
-%% @doc Handles events received in the <em>wait_response</em> state.
+%% @doc Handles events received in the <em>service_response</em> state.
 %% @private
 %%
-wait_response(info = _EventType,
+service_response(enter = _EventType, _EventContent, _Data) ->
+	keep_state_and_data;
+service_response(info = _EventType,
 		{http, {RequestId, {{_, 201, _}, _Headers, Body}}} = _EventContent,
-		#statedata{request = RequestId, start = Start} = Data) ->
-		NewData = Data#statedata{request = undefined},
+		#statedata{request = RequestId, count = Count,
+		start = Start} = Data) ->
 	case zj:decode(Body) of
 		{ok, #{"serviceCharacteristic" := Chars}} ->
 			F = fun(#{"name" := "serviceIdentity", "value" := Id}, {_, K, OPc}) ->
@@ -258,18 +272,96 @@ wait_response(info = _EventType,
 			case lists:foldl(F, {undefined, undefined, undefined}, Chars) of
 				{Id, K, OPc} when is_list(Id) ->
 					ets:insert(service, {Id, K, OPc}),
-					{next_state, wait_request, NewData, timeout(Start, next, Data)};
+					NewData = Data#statedata{request = undefined, count = Count + 1},
+					{next_state, service_request, NewData,
+							timeout(Start, next, NewData)};
 				_ ->
-					{stop, bad_service, NewData}
+					{stop, bad_service, Data}
 			end;
 		{Error, _Partial, _Remaining} when Error == error; Error == incomplete ->
-			{stop, Error, NewData}
+			{stop, Error, Data}
 	end;
-wait_response(info = _EventType,
+service_response(info = _EventType,
 		{http, {RequestId, {{_, StatusCode, _}, _Headers, _Body}}},
 		#statedata{request = RequestId} = Data) ->
 	{stop, StatusCode, Data};
-wait_response(info = _EventType, {http, {RequestId, {error, Reason}}},
+service_response(info = _EventType, {http, {RequestId, {error, Reason}}},
+		#statedata{request = RequestId} = Data) ->
+	{stop, Reason, Data}.
+
+-spec product_request(EventType, EventContent, Data) -> Result
+	when
+		EventType :: gen_statem:event_type(),
+		EventContent :: term(),
+		Data :: statedata(),
+		Result :: gen_statem:event_handler_result(state()).
+%% @doc Handles events received in the <em>product_request</em> state.
+%% @private
+%%
+product_request(enter = _EventType, service_request = _EventContent, Data) ->
+	?LOG_INFO("Begin phase 2: add product subscriptions"),
+	{keep_state, Data#statedata{count = 0, cursor = ets:first(service)}};
+product_request(enter, product_response, _Data) ->
+	keep_state_and_data;
+product_request(state_timeout, next,
+		#statedata{cursor = '$end_of_table', count = Count} = _Data) ->
+	?LOG_INFO("End phase 2: added ~b product subscriptions", [Count]),
+	keep_state_and_data;
+product_request(state_timeout, _EventContent,
+		#statedata{cursor = ServiceId,
+		uri = Uri, auth = Authorization} = Data) ->
+	Start = erlang:system_time(millisecond),
+	Path = Uri ++ "/productInventoryManagement/v2/product/",
+	ContentType = "application/json",
+	Accept = {"accept", ContentType},
+	RequestHeaders = [Authorization, Accept],
+	Offer = #{"id" => "Data (1G)",
+			"href" => "/catalogManagement/v2/productOffering/Data (1G)"},
+	Service = #{"id" => ServiceId,
+			"href" => "/serviceInventoryManagement/v2/service/" ++ ServiceId},
+	RequestBody = zj:encode(#{"productOffering" => Offer,
+			"realizingService" => Service}),
+	Request = {Path, RequestHeaders, ContentType, RequestBody},
+	case httpc:request(post, Request, [], [{sync, false}], tmf) of
+		{ok, RequestId} when is_reference(RequestId) ->
+			NewData = Data#statedata{request = RequestId, start = Start},
+			{next_state, product_response, NewData};
+		{error, Reason} ->
+			{stop, Reason, Data}
+	end.
+
+-spec product_response(EventType, EventContent, Data) -> Result
+	when
+		EventType :: gen_statem:event_type(),
+		EventContent :: term(),
+		Data :: statedata(),
+		Result :: gen_statem:event_handler_result(state()).
+%% @doc Handles events received in the <em>product_response</em> state.
+%% @private
+%%
+product_response(enter = _EventType, _EventContent, _Data) ->
+	keep_state_and_data;
+product_response(info = _EventType,
+		{http, {RequestId, {{_, 201, _}, _Headers, Body}}} = _EventContent,
+		#statedata{request = RequestId, start = Start,
+		cursor = ServiceId, count = Count} = Data) ->
+	case zj:decode(Body) of
+		{ok, #{"id" := ProductId}} ->
+			[Object] = ets:lookup(service, ServiceId),
+			true = ets:insert(service, erlang:append_element(Object, ProductId)),
+			NewData = Data#statedata{request = undefined,
+					cursor = ets:next(service, ServiceId), count = Count + 1},
+			{next_state, product_request, NewData, timeout(Start, next, NewData)};
+		{ok, #{}} ->
+			{stop, missing_id, Data};
+		{Error, _Partial, _Remaining} when Error == error; Error == incomplete ->
+			{stop, Error, Data}
+	end;
+product_response(info = _EventType,
+		{http, {RequestId, {{_, StatusCode, _}, _Headers, _Body}}},
+		#statedata{request = RequestId} = Data) ->
+	{stop, StatusCode, Data};
+product_response(info = _EventType, {http, {RequestId, {error, Reason}}},
 		#statedata{request = RequestId} = Data) ->
 	{stop, Reason, Data}.
 
