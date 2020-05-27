@@ -33,6 +33,7 @@
 %% export the callbacks for gen_statem states.
 -export([client_request/3, client_response/3, wait_request/3, wait_response/3]).
 
+-include_lib("kernel/include/logger.hrl").
 -include_lib("kernel/include/inet.hrl").
 
 -type state() :: client_request | client_response
@@ -111,6 +112,7 @@ client_request(timeout = _EventType, _EventContent,
 		#statedata{address = undefined, hostname = undefined,
 		uri = Uri, auth = Authorization} = Data) ->
 	Start = erlang:system_time(millisecond),
+	?LOG_INFO("Begin phase 0: add REST client"),
 	{ok, Hostname} = inet:gethostname(),
 	case inet:gethostbyname(Hostname, inet) of
 		{ok, #hostent{h_addrtype = inet, h_addr_list = [Address | _]}} ->
@@ -173,6 +175,8 @@ client_response(info = _EventType,
 		{ok, #{"id" := Id}} ->
 			case inet:parse_address(Id) of
 				{ok, Address} ->
+					?LOG_INFO("End phase 0: add REST client"),
+					?LOG_INFO("Begin phase 1: add service identifiers"),
 					NewData = Data#statedata{address = Address},
 					{next_state, wait_request, NewData, timeout(Start, NewData)};
 				{error, Reason} ->
@@ -224,7 +228,8 @@ wait_request(timeout = _EventType, _EventContent,
 				{error, Reason} ->
 					{stop, Reason, Data}
 			end;
-		_N ->
+		N ->
+			?LOG_INFO("End phase 1: added ~b service identifiers", [N]),
 			keep_state_and_data
 	end.
 

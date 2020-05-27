@@ -33,8 +33,9 @@
 %% export the callbacks for gen_statem states.
 -export([wait_for_start/3, wait_for_peer/3, connected/3]).
 
--include_lib("diameter/include/diameter.hrl").
 -include_lib("kernel/include/inet.hrl").
+-include_lib("diameter/include/diameter.hrl").
+-include_lib("kernel/include/logger.hrl").
 
 -type state() :: wait_for_start | wait_for_peer | connected.
 
@@ -137,8 +138,8 @@ wait_for_peer(info, #diameter_event{info = Event, service = Service},
 		#statedata{service = Service, transport = Ref} = Data)
 		when element(1, Event) == up, element(2, Event) == Ref ->
 	{_PeerRef, #diameter_caps{origin_host = {_, Peer}}} = element(3, Event),
-	error_logger:info_report(["DIAMETER peer connected",
-			{service, Service}, {peer, binary_to_list(Peer)}]),
+	?LOG_INFO("DIAMETER peer connected~nservice: ~w~npeer: ~p~n",
+			[Service, binary_to_list(Peer)]),
 	{next_state, connected, Data};
 wait_for_peer(info, #diameter_event{info = {watchdog, Ref, _PeerRef,
 		{_From, _To}, _Config}},
@@ -146,8 +147,7 @@ wait_for_peer(info, #diameter_event{info = {watchdog, Ref, _PeerRef,
 	{next_state, wait_for_peer, Data};
 wait_for_peer(info, #diameter_event{info = Event, service = Service},
 		#statedata{service = Service} = Data) ->
-	error_logger:info_report(["DIAMETER event",
-			{service, Service}, {event, Event}]),
+	?LOG_INFO("DIAMETER event~nservice: ~w~nevent: ~p~n", [Service, Event]),
 	{next_state, wait_for_peer, Data};
 wait_for_peer(info, {'EXIT', _Pid, noconnection}, Data) ->
 	{stop, noconnection, Data};
@@ -167,8 +167,8 @@ wait_for_peer(info, #diameter_event{info = stop, service = Service},
 connected(info, #diameter_event{info = {down, Ref, Peer, _Config},
 		service = Service}, #statedata{transport = Ref} = Data) ->
 	{_PeerRef, #diameter_caps{origin_host = {_, Peer1}}} = Peer,
-	error_logger:info_report(["DIAMETER peer disconnected",
-			{service, Service}, {peer, binary_to_list(Peer1)}]),
+	?LOG_INFO("DIAMETER peer disconnected~nservice: ~w~npeer: ~p~n",
+			[Service, binary_to_list(Peer)]),
 	{stop, down, Data};
 connected(info, #diameter_event{info = {watchdog, Ref, _PeerRef,
 		{_From, _To}, _Config}},
@@ -176,8 +176,7 @@ connected(info, #diameter_event{info = {watchdog, Ref, _PeerRef,
 	{next_state, connected, Data};
 connected(info, #diameter_event{info = Event, service = Service},
 		#statedata{service = Service} = Data) ->
-	error_logger:info_report(["DIAMETER event",
-			{service, Service}, {event, Event}]),
+	?LOG_INFO("DIAMETER event~nservice: ~w~nevent: ~p~n", [Service, Event]),
 	{next_state, connected, Data};
 connected(info, {'EXIT', _Pid, noconnection}, Data) ->
 	{stop, noconnection, Data};
@@ -215,9 +214,9 @@ terminate(_Reason, _State,
 		ok ->
 			diameter:stop_service(Service);
 		{error, Reason} ->
-			error_logger:error_report(["Failed to remove transport",
-					{module, ?MODULE}, {service, Service},
-					{transport, Transport}, {error, Reason}])
+			?LOG_ERROR("Failed to remove transport~n"
+					"service: ~w~ntransport: ~p~nerror: ~w~n",
+					[Service, Transport, Reason])
 	end.
 
 -spec code_change(OldVsn, OldState, OldData, Extra) -> Result
