@@ -33,14 +33,16 @@
 %% export the callbacks for gen_statem states.
 -export([client_request/3, client_response/3,
 		service_request/3, service_response/3,
-		product_request/3, product_response/3]).
+		product_request/3, product_response/3,
+		balance_request/3, balance_response/3]).
 
 -include_lib("kernel/include/logger.hrl").
 -include_lib("kernel/include/inet.hrl").
 
 -type state() :: client_request | client_response
 		| service_request | service_response
-		| product_request | service_response.
+		| product_request | service_response
+		| balance_request | balance_response.
 
 -record(statedata,
 		{active :: pos_integer(),
@@ -230,10 +232,10 @@ service_request(state_timeout, _EventContent,
 				"value" => binary_to_hex(crypto:strong_rand_bytes(16))},
 			#{"name" => "serviceAkaOPc",
 				"value" => binary_to_hex(crypto:strong_rand_bytes(16))}],
-	ServiceSpecification = #{"id" => "1",
+	ServiceSpecificationRef = #{"id" => "1",
 			"href" => "/catalogManagement/v2/serviceSpecification/1"},
 	RequestBody = zj:encode(#{"serviceCharacteristic" => Chars,
-			"serviceSpecification" => ServiceSpecification}),
+			"serviceSpecification" => ServiceSpecificationRef}),
 	Request = {Path, RequestHeaders, ContentType, RequestBody},
 	case httpc:request(post, Request, [], [{sync, false}], tmf) of
 		{ok, RequestId} when is_reference(RequestId) ->
@@ -304,9 +306,10 @@ product_request(enter = _EventType, service_request = _EventContent, Data) ->
 product_request(enter, product_response, _Data) ->
 	keep_state_and_data;
 product_request(state_timeout, next,
-		#statedata{cursor = '$end_of_table', count = Count} = _Data) ->
+		#statedata{cursor = '$end_of_table', count = Count} = Data) ->
 	?LOG_INFO("End phase 2: added ~b product subscriptions", [Count]),
-	keep_state_and_data;
+	Start = erlang:system_time(millisecond),
+	{next_state, balance_request, Data, timeout(Start, start, Data)};
 product_request(state_timeout, _EventContent,
 		#statedata{cursor = ServiceId,
 		uri = Uri, auth = Authorization} = Data) ->
@@ -315,12 +318,12 @@ product_request(state_timeout, _EventContent,
 	ContentType = "application/json",
 	Accept = {"accept", ContentType},
 	RequestHeaders = [Authorization, Accept],
-	Offer = #{"id" => "Data (1G)",
+	OfferRef = #{"id" => "Data (1G)",
 			"href" => "/catalogManagement/v2/productOffering/Data (1G)"},
-	Service = #{"id" => ServiceId,
+	ServiceRef = #{"id" => ServiceId,
 			"href" => "/serviceInventoryManagement/v2/service/" ++ ServiceId},
-	RequestBody = zj:encode(#{"productOffering" => Offer,
-			"realizingService" => Service}),
+	RequestBody = zj:encode(#{"productOffering" => OfferRef,
+			"realizingService" => ServiceRef}),
 	Request = {Path, RequestHeaders, ContentType, RequestBody},
 	case httpc:request(post, Request, [], [{sync, false}], tmf) of
 		{ok, RequestId} when is_reference(RequestId) ->
@@ -362,6 +365,78 @@ product_response(info = _EventType,
 		#statedata{request = RequestId} = Data) ->
 	{stop, StatusCode, Data};
 product_response(info = _EventType, {http, {RequestId, {error, Reason}}},
+		#statedata{request = RequestId} = Data) ->
+	{stop, Reason, Data}.
+
+-spec balance_request(EventType, EventContent, Data) -> Result
+	when
+		EventType :: gen_statem:event_type(),
+		EventContent :: term(),
+		Data :: statedata(),
+		Result :: gen_statem:event_handler_result(state()).
+%% @doc Handles events received in the <em>balance_request</em> state.
+%% @private
+%%
+balance_request(enter = _EventType, product_request = _EventContent, Data) ->
+	?LOG_INFO("Begin phase 3: add balance buckets"),
+	{keep_state, Data#statedata{count = 0, cursor = ets:first(service)}};
+balance_request(enter, balance_response, _Data) ->
+	keep_state_and_data;
+balance_request(state_timeout, next,
+		#statedata{cursor = '$end_of_table', count = Count} = _Data) ->
+	?LOG_INFO("End phase 3: added ~b balance buckets", [Count]),
+	keep_state_and_data;
+balance_request(state_timeout, _EventContent,
+		#statedata{cursor = ServiceId,
+		uri = Uri, auth = Authorization} = Data) ->
+	Start = erlang:system_time(millisecond),
+	[{_, _, _, ProductId}] = ets:lookup(service, ServiceId),
+	Path = Uri ++ "/balanceManagement/v1/product/" ++ ProductId ++ "/balanceTopup",
+	ContentType = "application/json",
+	Accept = {"accept", ContentType},
+	RequestHeaders = [Authorization, Accept],
+	ProductRef = #{"id" => ProductId,
+			"href" => "/productInventoryManagement/v2/product/" ++ ProductId},
+	Amount = #{"units" => "cents", "amount" => "10000"},
+	RequestBody = zj:encode(#{"name" => "bench",
+			"amount" => Amount, "product" => ProductRef}),
+	Request = {Path, RequestHeaders, ContentType, RequestBody},
+	case httpc:request(post, Request, [], [{sync, false}], tmf) of
+		{ok, RequestId} when is_reference(RequestId) ->
+			NewData = Data#statedata{request = RequestId, start = Start},
+			{next_state, balance_response, NewData};
+		{error, Reason} ->
+			{stop, Reason, Data}
+	end.
+
+-spec balance_response(EventType, EventContent, Data) -> Result
+	when
+		EventType :: gen_statem:event_type(),
+		EventContent :: term(),
+		Data :: statedata(),
+		Result :: gen_statem:event_handler_result(state()).
+%% @doc Handles events received in the <em>balance_response</em> state.
+%% @private
+%%
+balance_response(enter = _EventType, _EventContent, _Data) ->
+	keep_state_and_data;
+balance_response(info = _EventType,
+		{http, {RequestId, {{_, 201, _}, _Headers, Body}}} = _EventContent,
+		#statedata{request = RequestId, start = Start,
+		cursor = ServiceId, count = Count} = Data) ->
+	case zj:decode(Body) of
+		{ok, #{}} ->
+			NewData = Data#statedata{request = undefined,
+					cursor = ets:next(service, ServiceId), count = Count + 1},
+			{next_state, balance_request, NewData, timeout(Start, next, NewData)};
+		{Error, _Partial, _Remaining} when Error == error; Error == incomplete ->
+			{stop, Error, Data}
+	end;
+balance_response(info = _EventType,
+		{http, {RequestId, {{_, StatusCode, _}, _Headers, _Body}}},
+		#statedata{request = RequestId} = Data) ->
+	{stop, StatusCode, Data};
+balance_response(info = _EventType, {http, {RequestId, {error, Reason}}},
 		#statedata{request = RequestId} = Data) ->
 	{stop, Reason, Data}.
 
