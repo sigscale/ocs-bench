@@ -78,7 +78,7 @@ init(_Args) ->
 	{ok, Active} = application:get_env(active),
 	{ok, Mean} = application:get_env(mean),
 	{ok, Deviation} = application:get_env(deviation),
-	[Service] = diameter:get_services(),
+	[Service] = diameter:services(),
 	{ok, transaction, #statedata{active = Active, mean = Mean,
 			deviation = Deviation, service = Service},
 			[{state_timeout, rand:uniform(4000), start}]}.
