@@ -119,6 +119,8 @@ init(_Args) ->
 client_request(enter = _EventType, client_request = _EventContent, Data) ->
 	?LOG_INFO("Begin phase 0: add REST client"),
 	{keep_state, Data#statedata{count = 0}};
+client_request(enter, client_response, Data) ->
+	keep_state_and_data;
 client_request(state_timeout = _EventType, start = _EventContent,
 		#statedata{uri = Uri, auth = Authorization} = Data) ->
 	Start = erlang:system_time(millisecond),
