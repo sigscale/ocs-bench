@@ -29,6 +29,8 @@
 %% optional callbacks for application behaviour
 -export([prep_stop/1, start_phase/3]).
 
+-include_lib("kernel/include/inet.hrl").
+
 -record(state, {}).
 
 %%----------------------------------------------------------------------
@@ -45,7 +47,18 @@
 		Reason :: term().
 %% @doc Starts the application processes.
 start(normal = _StartType, _Args) ->
-	supervisor:start_link(ocs_bench_sup, []).
+	case application:get_env(local_address) of
+		{ok, Address} when is_tuple(Address) ->
+			supervisor:start_link(ocs_bench_sup, [Address]);
+		{ok, undefined} ->
+			{ok, Hostname} = inet:gethostname(),
+			case inet:gethostbyname(Hostname, inet) of
+				{ok, #hostent{h_addrtype = inet, h_addr_list = [Address | _]}} ->
+					supervisor:start_link(ocs_bench_sup, [Address]);
+				{error, Reason} ->
+					{error, Reason}
+			end
+	end.
 
 -spec start_phase(Phase, StartType, PhaseArgs) -> Result
 	when

@@ -38,10 +38,10 @@
 %% @see //stdlib/supervisor:init/1
 %% @private
 %%
-init([] = _Args) ->
+init([Address] = _Args) ->
 	ChildSpecs = [server(ocs_bench_server, ocs_bench, [self()]),
 			supervisor(ocs_bench_rest_fsm_sup,
-					ocs_bench_rest_fsm_sup, []),
+					ocs_bench_rest_fsm_sup, [Address]),
 			supervisor(ocs_bench_diameter_service_fsm_sup,
 					ocs_bench_diameter_service_fsm_sup, []),
 			supervisor(ocs_bench_diameter_ro_fsm_sup,

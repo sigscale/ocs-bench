@@ -37,7 +37,6 @@
 		balance_request/3, balance_response/3]).
 
 -include_lib("kernel/include/logger.hrl").
--include_lib("kernel/include/inet.hrl").
 
 -type state() :: client_request | client_response
 		| service_request | service_response
@@ -51,7 +50,6 @@
 		start :: pos_integer(),
 		uri :: string(),
 		auth :: {Athorization :: string(), BasicAuth :: string()},
-		hostname :: undefined | string(),
 		address :: undefined | inet:ip_address(),
 		request :: reference(),
 		cursor :: term() | '$end_of_table',
@@ -90,7 +88,7 @@ callback_mode() ->
 %% @see //stdlib/gen_statem:init/1
 %% @private
 %%
-init(_Args) ->
+init([Address]) ->
 	{ok, Active} = application:get_env(active),
 	{ok, Mean} = application:get_env(mean),
 	{ok, Deviation} = application:get_env(deviation),
@@ -103,7 +101,7 @@ init(_Args) ->
 	service = ets:new(service, [public, named_table]),
 	Data = #statedata{active = Active, mean = Mean,
 			deviation = Deviation, uri = Uri,
-			auth = Authorization},
+			auth = Authorization, address = Address},
 	{ok, client_request, Data,
 			[{state_timeout, rand:uniform(4000), start}]}.
 
@@ -119,26 +117,19 @@ init(_Args) ->
 client_request(enter = _EventType, client_request = _EventContent, Data) ->
 	?LOG_INFO("Begin phase 0: add REST client"),
 	{keep_state, Data#statedata{count = 0}};
-client_request(enter, client_response, Data) ->
+client_request(enter, client_response, _Data) ->
 	keep_state_and_data;
-client_request(state_timeout = _EventType, start = _EventContent,
-		#statedata{uri = Uri, auth = Authorization} = Data) ->
+client_request(state_timeout, start,
+		#statedata{uri = Uri, auth = Authorization, address = Address} = Data) ->
 	Start = erlang:system_time(millisecond),
-	{ok, Hostname} = inet:gethostname(),
-	case inet:gethostbyname(Hostname, inet) of
-		{ok, #hostent{h_addrtype = inet, h_addr_list = [Address | _]}} ->
-			Path = "/ocs/v1/client/" ++ inet:ntoa(Address),
-			Accept = {"accept", "application/json"},
-			Request = {Uri ++ Path, [Authorization, Accept]},
-			case httpc:request(get, Request, [], [{sync, false}], tmf) of
-				{ok, RequestId} when is_reference(RequestId) ->
-					NewData = Data#statedata{request = RequestId,
-							start = Start, address = Address,
-							hostname = Hostname},
-					{next_state, client_response, NewData};
-				{error, Reason} ->
-					{stop, Reason, Data}
-			end;
+	Path = "/ocs/v1/client/" ++ inet:ntoa(Address),
+	Accept = {"accept", "application/json"},
+	Request = {Uri ++ Path, [Authorization, Accept]},
+	case httpc:request(get, Request, [], [{sync, false}], tmf) of
+		{ok, RequestId} when is_reference(RequestId) ->
+			NewData = Data#statedata{request = RequestId,
+					start = Start},
+			{next_state, client_response, NewData};
 		{error, Reason} ->
 			{stop, Reason, Data}
 	end;
@@ -173,7 +164,7 @@ client_request(state_timeout, post,
 client_response(enter = _EventType, _EventContent, _Data) ->
 	keep_state_and_data;
 client_response(info,
-		{http, {RequestId, {{_, 404, _}, _Headers, _Body}}} = _EventContent,
+		{http, {RequestId, {{_, 404, _}, _Headers, _Body}}},
 		#statedata{request = RequestId, start = Start} = Data) ->
 		NewData = Data#statedata{request = undefined},
 	{next_state, client_request, NewData, timeout(Start, post, Data)};
@@ -259,7 +250,7 @@ service_request(state_timeout, _EventContent,
 service_response(enter = _EventType, _EventContent, _Data) ->
 	keep_state_and_data;
 service_response(info = _EventType,
-		{http, {RequestId, {{_, 201, _}, _Headers, Body}}} = _EventContent,
+		{http, {RequestId, {{_, 201, _}, _Headers, Body}}},
 		#statedata{request = RequestId, count = Count,
 		start = Start} = Data) ->
 	case zj:decode(Body) of
@@ -385,9 +376,16 @@ balance_request(enter = _EventType, product_request = _EventContent, Data) ->
 balance_request(enter, balance_response, _Data) ->
 	keep_state_and_data;
 balance_request(state_timeout, next,
-		#statedata{cursor = '$end_of_table', count = Count} = _Data) ->
+		#statedata{cursor = '$end_of_table', count = Count,
+		address = Address} = Data) ->
 	?LOG_INFO("End phase 3: added ~b balance buckets", [Count]),
-	keep_state_and_data;
+	case supervisor:start_child(ocs_bench_diameter_service_fsm_sup, [[Address], []]) of
+		{ok, Fsm} ->
+			ets:give_away(service, Fsm, []),
+			{stop, normal, Data};
+		{error, Reason} ->
+			{stop, Reason, Data}
+	end;
 balance_request(state_timeout, _EventContent,
 		#statedata{cursor = ServiceId,
 		uri = Uri, auth = Authorization} = Data) ->
@@ -423,7 +421,7 @@ balance_request(state_timeout, _EventContent,
 balance_response(enter = _EventType, _EventContent, _Data) ->
 	keep_state_and_data;
 balance_response(info = _EventType,
-		{http, {RequestId, {{_, 201, _}, _Headers, Body}}} = _EventContent,
+		{http, {RequestId, {{_, 201, _}, _Headers, Body}}},
 		#statedata{request = RequestId, start = Start,
 		cursor = ServiceId, count = Count} = Data) ->
 	case zj:decode(Body) of

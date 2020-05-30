@@ -24,5 +24,8 @@
 			{deviation, 10},
 			{rest_uri, "http://localhost:8080"},
 			{rest_user, "admin"},
-			{rest_pass, "admin"}]},
+			{rest_pass, "admin"},
+			{local_address, undefined},
+			{remote_address, {127,0,0,1}},
+			{remote_port, 3868}]},
 	{mod, {ocs_bench_app, []}}]}.

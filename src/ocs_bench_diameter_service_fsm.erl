@@ -42,7 +42,6 @@
 -record(statedata,
 		{transport :: undefined | reference(),
 		address :: inet:ip_address(),
-		port :: inet:port_number(),
 		service :: term(),
 		options :: list()}).
 -type statedata() :: #statedata{}.
@@ -89,14 +88,15 @@ callback_mode() ->
 %% @see //stdlib/gen_statem:init/1
 %% @private
 %%
-init([Address, Port, Options] = _Args) ->
+init([Address] = _Args) ->
+	Options = [],
 	ServiceOptions = service_options(Options),
 	Service = default,
 	diameter:subscribe(Service),
 	case diameter:start_service(Service, ServiceOptions) of
 		ok ->
 			process_flag(trap_exit, true),
-			Data = #statedata{address = Address, port = Port,
+			Data = #statedata{address = Address,
 					service = Service, options = Options},
 			{ok, wait_for_start, Data};
 		{error, Reason} ->
@@ -114,16 +114,19 @@ init([Address, Port, Options] = _Args) ->
 %%
 wait_for_start(info = _EventType,
 		#diameter_event{info = start} = _EventContent,
-		#statedata{address = Address, port = Port,
+		#statedata{address = Address,
 		service = Service} = Data) ->
-	Options = transport_options(diameter_tcp, Address, Port),
+	Options = transport_options(diameter_tcp, Address),
 	case diameter:add_transport(Service, Options) of
 		{ok, Transport} ->
 			NewData = Data#statedata{transport = Transport},
 			{next_state, wait_for_peer, NewData};
 		{error, Reason} ->
 			{stop, Reason, Data}
-	end.
+	end;
+wait_for_start(info,
+		{'ETS-TRANSFER', service, _, []}, _Data) ->
+	keep_state_and_data.
 
 -spec wait_for_peer(EventType, EventContent, Data) -> Result
 	when
@@ -134,6 +137,9 @@ wait_for_start(info = _EventType,
 %% @doc Handles events received in the <em>wait_for_peer</em> state.
 %% @private
 %%
+wait_for_peer(info = _EventType,
+		{'ETS-TRANSFER', service, _, []} = _EventContent, _Data) ->
+	keep_state_and_data;
 wait_for_peer(info, #diameter_event{info = Event, service = Service},
 		#statedata{service = Service, transport = Ref} = Data)
 		when element(1, Event) == up, element(2, Event) == Ref ->
@@ -168,7 +174,7 @@ connected(info, #diameter_event{info = {down, Ref, Peer, _Config},
 		service = Service}, #statedata{transport = Ref} = Data) ->
 	{_PeerRef, #diameter_caps{origin_host = {_, Peer1}}} = Peer,
 	?LOG_INFO("DIAMETER peer disconnected~nservice: ~w~npeer: ~p~n",
-			[Service, binary_to_list(Peer)]),
+			[Service, binary_to_list(Peer1)]),
 	{stop, down, Data};
 connected(info, #diameter_event{info = {watchdog, Ref, _PeerRef,
 		{_From, _To}, _Config}},
@@ -241,18 +247,19 @@ code_change(_OldVsn, OldState, OldData, _Extra) ->
 %%  internal functions
 %%----------------------------------------------------------------------
 
--spec transport_options(Transport, Address, Port) -> Options
+-spec transport_options(Transport, Address) -> Options
 	when
 		Transport :: diameter_tcp | diameter_sctp,
 		Address :: inet:ip_address(),
-		Port :: inet:port_number(),
 		Options :: tuple().
 %% @doc Returns options for a DIAMETER transport layer.
 %% @hidden
-transport_options(Transport, Address, Port) ->
+transport_options(Transport, Address) ->
+	{ok, RemoteAddress} = application:get_env(remote_address),
+	{ok, RemotePort} = application:get_env(remote_port),
 	Opts = [{transport_module, Transport},
-			{transport_config, [{reuseaddr, true},
-					{ip, Address}, {port, Port}]}],
+			{transport_config, [{reuseaddr, true}, {ip, Address},
+			{raddr, RemoteAddress}, {rport, RemotePort}]}],
 	{connect, Opts}.
 
 -spec service_options(Options) -> Options
