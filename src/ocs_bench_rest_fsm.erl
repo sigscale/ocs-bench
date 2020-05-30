@@ -209,7 +209,8 @@ service_request(enter = _EventType, client_response = _EventContent, Data) ->
 service_request(enter, service_response, _Data) ->
 	keep_state_and_data;
 service_request(state_timeout, next,
-		#statedata{count = Count, active = Count} = Data) ->
+		#statedata{count = Count, active = Active} = Data)
+		when Count > Active ->
 	?LOG_INFO("End phase 1: added ~b service identifiers", [Count]),
 	Start = erlang:system_time(millisecond),
 	{next_state, product_request, Data,  timeout(Start, start, Data)};
