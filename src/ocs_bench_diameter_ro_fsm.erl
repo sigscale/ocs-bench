@@ -58,7 +58,7 @@
 %% @private
 %%
 callback_mode() ->
-	state_functions.
+	[state_functions, state_enter].
 
 -spec init(Args) -> Result
 	when
@@ -92,6 +92,8 @@ init(_Args) ->
 %% @doc Handles events received in the <em>transaction</em> state.
 %% @private
 %%
+transaction(enter = _EventType, _EventContent, Data) ->
+	keep_state_and_data;
 transaction(state_timeout = _EventType, _EventContent, #statedata{} = Data) ->
 	Start = erlang:system_time(millisecond),
 	{next_state, transaction, Data, timeout(Start, continue, Data)}.

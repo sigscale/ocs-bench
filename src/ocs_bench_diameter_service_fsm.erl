@@ -72,7 +72,7 @@
 %% @private
 %%
 callback_mode() ->
-	state_functions.
+	[state_functions, state_enter].
 
 -spec init(Args) -> Result
 	when
@@ -112,8 +112,9 @@ init([Address] = _Args) ->
 %% @doc Handles events received in the <em>wait_for_start</em> state.
 %% @private
 %%
-wait_for_start(info = _EventType,
-		#diameter_event{info = start} = _EventContent,
+wait_for_start(enter = _EventType, _EventContent, Data) ->
+	keep_state_and_data;
+wait_for_start(info, #diameter_event{info = start},
 		#statedata{address = Address,
 		service = Service} = Data) ->
 	Options = transport_options(diameter_tcp, Address),
@@ -137,8 +138,9 @@ wait_for_start(info,
 %% @doc Handles events received in the <em>wait_for_peer</em> state.
 %% @private
 %%
-wait_for_peer(info = _EventType,
-		{'ETS-TRANSFER', service, _, []} = _EventContent, _Data) ->
+wait_for_peer(enter = _EventType, _EventContent, Data) ->
+	keep_state_and_data;
+wait_for_peer(info, {'ETS-TRANSFER', service, _, []}, _Data) ->
 	keep_state_and_data;
 wait_for_peer(info, #diameter_event{info = Event, service = Service},
 		#statedata{service = Service, transport = Ref} = Data)
@@ -170,6 +172,13 @@ wait_for_peer(info, #diameter_event{info = stop, service = Service},
 %% @doc Handles events received in the <em>connected</em> state.
 %% @private
 %%
+connected(enter = _EventType, wait_for_peer = _EventContent, _Data) ->
+	case supervisor:start_child(ocs_bench_diameter_ro_fsm_sup, [[], []]) of
+		{ok, Fsm} ->
+			keep_state_and_data;
+		{error, Reason} ->
+			{error, Reason}
+	end;
 connected(info, #diameter_event{info = {down, Ref, Peer, _Config},
 		service = Service}, #statedata{transport = Ref} = Data) ->
 	{_PeerRef, #diameter_caps{origin_host = {_, Peer1}}} = Peer,
