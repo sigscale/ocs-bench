@@ -316,7 +316,7 @@ product_request(state_timeout, _EventContent,
 	ServiceRef = #{"id" => ServiceId,
 			"href" => "/serviceInventoryManagement/v2/service/" ++ ServiceId},
 	RequestBody = zj:encode(#{"productOffering" => OfferRef,
-			"realizingService" => ServiceRef}),
+			"realizingService" => [ServiceRef]}),
 	Request = {Path, RequestHeaders, ContentType, RequestBody},
 	case httpc:request(post, Request, [], [{sync, false}], tmf) of
 		{ok, RequestId} when is_reference(RequestId) ->
@@ -342,7 +342,7 @@ product_response(info = _EventType,
 		#statedata{request = RequestId, start = Start,
 		cursor = ServiceId, count = Count} = Data) ->
 	case zj:decode(Body) of
-		{ok, #{"id" := ProductId}} ->
+		{ok, #{"id" := ProductId} = _Product} ->
 			[Object] = ets:lookup(service, ServiceId),
 			true = ets:insert(service, erlang:append_element(Object, ProductId)),
 			NewData = Data#statedata{request = undefined,
