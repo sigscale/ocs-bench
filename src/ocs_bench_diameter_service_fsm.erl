@@ -112,7 +112,7 @@ init([Address] = _Args) ->
 %% @doc Handles events received in the <em>wait_for_start</em> state.
 %% @private
 %%
-wait_for_start(enter = _EventType, _EventContent, Data) ->
+wait_for_start(enter = _EventType, _EventContent, _Data) ->
 	keep_state_and_data;
 wait_for_start(info, #diameter_event{info = start},
 		#statedata{address = Address,
@@ -138,7 +138,7 @@ wait_for_start(info,
 %% @doc Handles events received in the <em>wait_for_peer</em> state.
 %% @private
 %%
-wait_for_peer(enter = _EventType, _EventContent, Data) ->
+wait_for_peer(enter = _EventType, _EventContent, _Data) ->
 	keep_state_and_data;
 wait_for_peer(info, {'ETS-TRANSFER', service, _, []}, _Data) ->
 	keep_state_and_data;
@@ -174,7 +174,7 @@ wait_for_peer(info, #diameter_event{info = stop, service = Service},
 %%
 connected(enter = _EventType, wait_for_peer = _EventContent, _Data) ->
 	case supervisor:start_child(ocs_bench_diameter_ro_fsm_sup, [[], []]) of
-		{ok, Fsm} ->
+		{ok, _Fsm} ->
 			keep_state_and_data;
 		{error, Reason} ->
 			{error, Reason}
