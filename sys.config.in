@@ -1,1 +1,5 @@
-[{ocs_bench, []}].
+[{ocs_bench,
+      []},
+{inets,
+      [{httpc,
+            [{profile, tmf}]}]}].
