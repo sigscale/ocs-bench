@@ -1,5 +1,6 @@
 [{ocs_bench,
       []},
 {inets,
-      [{httpc,
-            [{profile, tmf}]}]}].
+      [{services,
+            [{httpc,
+                  [{profile, tmf}]}]}]}].
