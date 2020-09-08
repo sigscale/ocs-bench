@@ -392,7 +392,7 @@ balance_request(state_timeout, _EventContent,
 		uri = Uri, auth = Authorization} = Data) ->
 	Start = erlang:system_time(millisecond),
 	[{_, _, _, ProductId}] = ets:lookup(service, ServiceId),
-	Path = Uri ++ "/balanceManagement/v1/product/" ++ ProductId ++ "/balanceTopup",
+	Path = Uri ++ "/balanceManagement/v1/balanceAdjustment",
 	ContentType = "application/json",
 	Accept = {"accept", ContentType},
 	RequestHeaders = [Authorization, Accept],
@@ -422,17 +422,12 @@ balance_request(state_timeout, _EventContent,
 balance_response(enter = _EventType, _EventContent, _Data) ->
 	keep_state_and_data;
 balance_response(info = _EventType,
-		{http, {RequestId, {{_, 201, _}, _Headers, Body}}},
+		{http, {RequestId, {{_, 204, _}, _Headers, _Body}}},
 		#statedata{request = RequestId, start = Start,
 		cursor = ServiceId, count = Count} = Data) ->
-	case zj:decode(Body) of
-		{ok, #{}} ->
-			NewData = Data#statedata{request = undefined,
-					cursor = ets:next(service, ServiceId), count = Count + 1},
-			{next_state, balance_request, NewData, timeout(Start, next, NewData)};
-		{Error, _Partial, _Remaining} when Error == error; Error == incomplete ->
-			{stop, Error, Data}
-	end;
+	NewData = Data#statedata{request = undefined,
+			cursor = ets:next(service, ServiceId), count = Count + 1},
+	{next_state, balance_request, NewData, timeout(Start, next, NewData)};
 balance_response(info = _EventType,
 		{http, {RequestId, {{_, StatusCode, _}, _Headers, _Body}}},
 		#statedata{request = RequestId} = Data) ->
