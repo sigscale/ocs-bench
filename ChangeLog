@@ -1,0 +1,5 @@
+2020-09-09  Vance Shipley <vances@sigscale.org>
+
+	* use balance adjustment instead of topup
+	* use centralized unit determination
+
