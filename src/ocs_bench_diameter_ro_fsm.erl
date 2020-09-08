@@ -131,7 +131,6 @@ ccr(state_timeout, _EventContent,
 		orig_host = OriginHost, orig_realm = OriginRealm,
 		dest_realm = DestinationRealm} = Data) ->
 	Start = erlang:system_time(millisecond),
-	RsuSize = 5000000,
 	Request = #'3gpp_ro_CCR'{'Session-Id' = diameter:session_id(OriginHost),
 			'Origin-Host' = OriginHost,
 			'Origin-Realm' = OriginRealm,
@@ -150,8 +149,7 @@ ccr(state_timeout, _EventContent,
 	Request1 = case ets:lookup(service, Identity) of
 		[Object] when size(Object) == 4 ->
 			CcRequestNumber = 0,
-			RSU = #'3gpp_ro_Requested-Service-Unit'{'CC-Total-Octets' = [RsuSize]},
-			MSCC = #'3gpp_ro_Multiple-Services-Credit-Control'{'Requested-Service-Unit' = [RSU]},
+			MSCC = #'3gpp_ro_Multiple-Services-Credit-Control'{},
 			Request#'3gpp_ro_CCR'{
 					'CC-Request-Type' = ?'3GPP_CC-REQUEST-TYPE_INITIAL_REQUEST',
 					'CC-Request-Number' = CcRequestNumber,
@@ -164,7 +162,7 @@ ccr(state_timeout, _EventContent,
 			Object2 = erlang:setelement(6, Object1, Reserved - UsuSize),
 			ets:insert(service, Object2),
 			USU = #'3gpp_ro_Used-Service-Unit'{'CC-Total-Octets' = [UsuSize]},
-			RSU = #'3gpp_ro_Requested-Service-Unit'{'CC-Total-Octets' = [RsuSize]},
+			RSU = #'3gpp_ro_Requested-Service-Unit'{},
 			MSCC = #'3gpp_ro_Multiple-Services-Credit-Control'{
 					'Used-Service-Unit' = [USU],
 					'Requested-Service-Unit' = [RSU]},
