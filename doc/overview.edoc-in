@@ -7,9 +7,52 @@
 This application is intended to be used to benchmark SigScale OCS
 for subscriber authentication, authorization, registration and charging.
 
-==Installation==
-
 ==Operation==
+The {@link //ocs_bench. ocs_bench} application shall exercise the
+REST and DIAMETER interfaces of the <i>SigScale OCS</i> system under
+test (SUT). A number of concurrent sessions to simulate for charging,
+and target number of transactions per second (TPS), are defined which
+the application will attempt to maintain. The intent is both to stress
+all the interface interactions and to place a significant load upon
+the SUT in order to observe it's behaviour in a specific configuration.
+
+On start the {@link //ocs_bench. ocs_bench} application will begin by
+adding a new REST client on the SUT for it's subsequent use.  Then it
+continues by provisioning <i>Services</i> (TMF638) on the SUT, followed
+by <i>Products</i> (TMF637) and <i>Buckets</i> (TMF654) up to the number
+of active sessions configured.
+
+After provsisioning the SUT is complete it enters the charging simulation
+phase, sending DIAMETER Credit-Control-Requests (CCR). Initial CCR shall
+be sent to start sessions, followed by a number of interim updates and
+a final.  New sessions are started as necessary to maintain the target
+number of active sessions.
+
+The charging phase shall continue until all <i>Balance Buckets</i> are
+exhausted.  Each DIAMETER 4012 (CREDIT_LIMIT_REACHED) response will
+remove that <i>Product</i> until there are none available.
 
 ==Configuration==
+The {@link //ocs_bench. ocs_bench} application may be configured using the following
+application environment variables (`~/releases/<VERSION>/sys.config'):
+<dl>
+	<dt>`active'</dt>
+		<dd>Target number of active sessions to maintain. (default: `1000')</dd>
+	<dt>`mean'</dt>
+		<dd>Target statistical mean (average) number of transactions per second. (default: `1')</dd>
+	<dt>`deviation'</dt>
+		<dd>Statistical standard deviation from the mean as a percentage. (default: `10')</dd>
+	<dt>`rest_uri'</dt>
+		<dd>URI of the REST interface of the system under test. (default: `"http://localhost:8080"'</dd>
+	<dt>`rest_user'</dt>
+		<dd>Username for the REST interface of the system under test. (default: `"admin"')</dd>
+	<dt>`rest_pass'</dt>
+		<dd>The password for the REST interface of the system under test. (default: `"admin"')</dd>
+	<dt>`local_address'</dt>
+		<dd>Local IP address to bind a specific interface (optional).</dd>
+	<dt>`remote_address'</dt>
+		<dd>IP address of the system under test. (default: `{127,0,0,1}')</dd>
+	<dt>`remote_port'</dt>
+		<dd>IP port number DIAMETER service of the system under test. (default: `3868')</dd>
+</dl>
 
