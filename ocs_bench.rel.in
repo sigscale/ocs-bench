@@ -2,6 +2,7 @@
 	[{kernel, "@ERLANG_LIB_VER_kernel@"},
 	{stdlib, "@ERLANG_LIB_VER_stdlib@"},
 	{sasl, "@ERLANG_LIB_VER_sasl@"},
+	{mnesia, "@ERLANG_LIB_VER_mnesia@", load},
 	{compiler, "@ERLANG_LIB_VER_compiler@", none},
 	{syntax_tools, "@ERLANG_LIB_VER_syntax_tools@", none},
 	{crypto, "@ERLANG_LIB_VER_crypto@"},
