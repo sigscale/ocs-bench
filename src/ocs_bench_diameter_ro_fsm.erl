@@ -149,7 +149,9 @@ ccr(state_timeout, _EventContent,
 	Request1 = case ets:lookup(service, Identity) of
 		[Object] when size(Object) == 4 ->
 			CcRequestNumber = 0,
-			MSCC = #'3gpp_ro_Multiple-Services-Credit-Control'{},
+				RSU = #'3gpp_ro_Requested-Service-Unit'{},
+			MSCC = #'3gpp_ro_Multiple-Services-Credit-Control'{
+					'Requested-Service-Unit' = [RSU]},
 			Request#'3gpp_ro_CCR'{
 					'CC-Request-Type' = ?'3GPP_CC-REQUEST-TYPE_INITIAL_REQUEST',
 					'CC-Request-Number' = CcRequestNumber,
@@ -217,7 +219,7 @@ cca(cast, {ok, #'3gpp_ro_CCA'{'Session-Id' = Session,
 	[Object] = ets:lookup(service, Identity),
 	Object1 = erlang:append_element(Object, CcRequestNumber),
 	Object2 = erlang:append_element(Object1, GsuSize),
-	ets:insert(service, Object2),
+	T = ets:insert(service, Object2),
 	NewData = Data#statedata{session = undefined,
 			cursor = ets:next(service, Identity), count = Count + 1},
 	{next_state, ccr, NewData, timeout(Start, next, NewData)};
