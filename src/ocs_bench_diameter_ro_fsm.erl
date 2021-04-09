@@ -130,8 +130,9 @@ ccr(state_timeout, _EventContent,
 		#statedata{cursor = Identity, service = Service,
 		orig_host = OriginHost, orig_realm = OriginRealm,
 		dest_realm = DestinationRealm} = Data) ->
+	Session = diameter:session_id(OriginHost),
 	Start = erlang:system_time(millisecond),
-	Request = #'3gpp_ro_CCR'{'Session-Id' = diameter:session_id(OriginHost),
+	Request = #'3gpp_ro_CCR'{'Session-Id' = Session,
 			'Origin-Host' = OriginHost,
 			'Origin-Realm' = OriginRealm,
 			'Destination-Realm' = DestinationRealm,
@@ -190,7 +191,7 @@ ccr(state_timeout, _EventContent,
 	case diameter:call(Service, ?RO_APPLICATION, Request1,
 			[detach, {extra, [self()]}]) of
 		ok ->
-			NewData = Data#statedata{start = Start},
+			NewData = Data#statedata{start = Start, session = Session},
 			{next_state, cca, NewData};
 		{error, Reason} ->
 			{stop, Reason, Data}
