@@ -130,7 +130,7 @@ ccr(state_timeout, _EventContent,
 		#statedata{cursor = Identity, service = Service,
 		orig_host = OriginHost, orig_realm = OriginRealm,
 		dest_realm = DestinationRealm} = Data) ->
-	Session = diameter:session_id(OriginHost),
+	Session = list_to_binary(diameter:session_id(binary_to_list(OriginHost))),
 	Start = erlang:system_time(millisecond),
 	Request = #'3gpp_ro_CCR'{'Session-Id' = Session,
 			'Origin-Host' = OriginHost,
