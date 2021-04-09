@@ -220,7 +220,7 @@ cca(cast, {ok, #'3gpp_ro_CCA'{'Session-Id' = Session,
 	[Object] = ets:lookup(service, Identity),
 	Object1 = erlang:append_element(Object, CcRequestNumber),
 	Object2 = erlang:append_element(Object1, GsuSize),
-	T = ets:insert(service, Object2),
+	ets:insert(service, Object2),
 	NewData = Data#statedata{session = undefined,
 			cursor = ets:next(service, Identity), count = Count + 1},
 	{next_state, ccr, NewData, timeout(Start, next, NewData)};
