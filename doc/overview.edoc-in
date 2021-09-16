@@ -42,6 +42,10 @@ application environment variables (`~/releases/<VERSION>/sys.config'):
 		<dd>Target statistical mean (average) number of transactions per second. (default: `1')</dd>
 	<dt>`deviation'</dt>
 		<dd>Statistical standard deviation from the mean as a percentage. (default: `10')</dd>
+	<dt>`sub_id'</dt>
+		<dd>Defines the type and pattern of `Subscription-Id' as `{Type, Prefix, N}'.
+				`Type' may be `imsi' or `msisdn'. Generated values shall
+				have `N' random digits after `Prefix'. (default: `{imsi, "001001", 10}'</dd>
 	<dt>`rest_uri'</dt>
 		<dd>URI of the REST interface of the system under test. (default: `"http://localhost:8080"'</dd>
 	<dt>`rest_user'</dt>

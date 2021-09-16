@@ -47,6 +47,9 @@
 		{active :: pos_integer(),
 		mean :: pos_integer(),
 		deviation :: 0..100,
+		id_type :: imsi | msisdn,
+      id_prefix :: string(),
+		id_n :: pos_integer(),
 		start :: pos_integer(),
 		uri :: string(),
 		auth :: {Athorization :: string(), BasicAuth :: string()},
@@ -92,6 +95,7 @@ init([Address]) ->
 	{ok, Active} = application:get_env(active),
 	{ok, Mean} = application:get_env(mean),
 	{ok, Deviation} = application:get_env(deviation),
+	{ok, {IdType, Prefix, N}} = application:get_env(sub_id),
 	{ok, Uri} = application:get_env(rest_uri),
 	{ok, User} = application:get_env(rest_user),
 	{ok, Password} = application:get_env(rest_pass),
@@ -101,6 +105,7 @@ init([Address]) ->
 	service = ets:new(service, [public, named_table]),
 	Data = #statedata{active = Active, mean = Mean,
 			deviation = Deviation, uri = Uri,
+			id_type = IdType, id_prefix = Prefix, id_n = N,
 			auth = Authorization, address = Address},
 	{ok, client_request, Data,
 			[{state_timeout, rand:uniform(4000), start}]}.
@@ -215,13 +220,14 @@ service_request(state_timeout, next,
 	Start = erlang:system_time(millisecond),
 	{next_state, product_request, Data,  timeout(Start, start, Data)};
 service_request(state_timeout, _EventContent,
-		#statedata{uri = Uri, auth = Authorization} = Data) ->
+		#statedata{uri = Uri, auth = Authorization,
+		id_prefix = Prefix, id_n = N} = Data) ->
 	Start = erlang:system_time(millisecond),
 	Path = Uri ++ "/serviceInventoryManagement/v2/service/",
 	ContentType = "application/json",
 	Accept = {"accept", ContentType},
 	RequestHeaders = [Authorization, Accept],
-	Chars = [#{"name" => "serviceIdentity", "value" => imsi()},
+	Chars = [#{"name" => "serviceIdentity", "value" => sub_id(Prefix, N)},
 			#{"name" => "serviceAkaK",
 				"value" => binary_to_hex(crypto:strong_rand_bytes(16))},
 			#{"name" => "serviceAkaOPc",
@@ -253,7 +259,7 @@ service_response(enter = _EventType, _EventContent, _Data) ->
 service_response(info = _EventType,
 		{http, {RequestId, {{_, 201, _}, _Headers, Body}}},
 		#statedata{request = RequestId, count = Count,
-		start = Start} = Data) ->
+		id_type = IdType, start = Start} = Data) ->
 	case zj:decode(Body) of
 		{ok, #{"serviceCharacteristic" := Chars}} ->
 			F = fun(#{"name" := "serviceIdentity", "value" := Id}, {_, K, OPc}) ->
@@ -267,7 +273,7 @@ service_response(info = _EventType,
 			end,
 			case lists:foldl(F, {undefined, undefined, undefined}, Chars) of
 				{Id, K, OPc} when is_list(Id) ->
-					ets:insert(service, {Id, K, OPc}),
+					ets:insert(service, {Id, IdType, K, OPc}),
 					NewData = Data#statedata{request = undefined, count = Count + 1},
 					{next_state, service_request, NewData,
 							timeout(Start, next, NewData)};
@@ -391,7 +397,7 @@ balance_request(state_timeout, _EventContent,
 		#statedata{cursor = ServiceId,
 		uri = Uri, auth = Authorization} = Data) ->
 	Start = erlang:system_time(millisecond),
-	[{_, _, _, ProductId}] = ets:lookup(service, ServiceId),
+	[{_, _, _, _, ProductId}] = ets:lookup(service, ServiceId),
 	Path = Uri ++ "/balanceManagement/v1/balanceAdjustment",
 	ContentType = "application/json",
 	Accept = {"accept", ContentType},
@@ -511,18 +517,21 @@ timeout(Start, EventContent,
 	end,
 	[{state_timeout, Time, EventContent}].
 
--spec imsi() -> [$0..$9].
-%% @doc Generate an IMSI.
+-spec sub_id(Prefix, N) -> [$0..$9]
+	when
+		Prefix :: string(),
+		N :: pos_integer().
+%% @doc Generate a subscription identifier.
 %% @private
-imsi() ->
+sub_id(Prefix, N) ->
 	Charset = lists:seq($0, $9),
-	imsi(Charset, []).
+	sub_id(Charset, N, Prefix).
 %% @hidden
-imsi(Charset, Acc) when length(Acc) < 9 ->
-	N = lists:nth(rand:uniform(10), Charset),
-	imsi(Charset, [N | Acc]);
-imsi(_, Acc) ->
-	"001001" ++ Acc.
+sub_id(_, 0, Acc) ->
+	lists:reverse(Acc);
+sub_id(Charset, N, Acc) ->
+	D = lists:nth(rand:uniform(10), Charset),
+	sub_id(Charset, N - 1, [D | Acc]).
 
 %% @hidden
 binary_to_hex(B) when is_binary(B) ->

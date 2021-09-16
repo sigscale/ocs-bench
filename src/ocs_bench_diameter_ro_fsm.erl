@@ -132,6 +132,7 @@ ccr(state_timeout, _EventContent,
 		dest_realm = DestinationRealm} = Data) ->
 	Session = list_to_binary(diameter:session_id(binary_to_list(OriginHost))),
 	Start = erlang:system_time(millisecond),
+	SubId = #'3gpp_ro_Subscription-Id'{'Subscription-Id-Data' = Identity},
 	Request = #'3gpp_ro_CCR'{'Session-Id' = Session,
 			'Origin-Host' = OriginHost,
 			'Origin-Realm' = OriginRealm,
@@ -139,16 +140,13 @@ ccr(state_timeout, _EventContent,
 			'Auth-Application-Id' = ?RO_APPLICATION_ID,
 			'Service-Context-Id' = "32251@3gpp.org",
 			'User-Name' = [Identity],
-			'Subscription-Id' = [#'3gpp_ro_Subscription-Id'{
-					'Subscription-Id-Type' = ?'3GPP_SUBSCRIPTION-ID-TYPE_END_USER_IMSI',
-					'Subscription-Id-Data' = Identity}],
 			'Multiple-Services-Indicator' = [?'3GPP_MULTIPLE-SERVICES-INDICATOR_MULTIPLE_SERVICES_SUPPORTED'],
 			'Service-Information' = [#'3gpp_ro_Service-Information'{
 					'PS-Information' = [#'3gpp_ro_PS-Information'{
 							'3GPP-SGSN-MCC-MNC' = ["001001"]}]}]},
 	MaxRequest = rand:uniform(25),
 	Request1 = case ets:lookup(service, Identity) of
-		[Object] when size(Object) == 4 ->
+		[Object] when size(Object) == 5 ->
 			CcRequestNumber = 0,
 				RSU = #'3gpp_ro_Requested-Service-Unit'{},
 			MSCC = #'3gpp_ro_Multiple-Services-Credit-Control'{
@@ -156,13 +154,14 @@ ccr(state_timeout, _EventContent,
 			Request#'3gpp_ro_CCR'{
 					'CC-Request-Type' = ?'3GPP_CC-REQUEST-TYPE_INITIAL_REQUEST',
 					'CC-Request-Number' = CcRequestNumber,
+					'Subscription-Id' = [sub_id(element(2, Object), SubId)],
 					'Multiple-Services-Credit-Control' = [MSCC]};
-		[Object] when element(5, Object) < MaxRequest ->
-			Reserved = element(6, Object),
-			CcRequestNumber = element(5, Object) + 1,
-			Object1 = erlang:setelement(5, Object, CcRequestNumber),
+		[Object] when element(6, Object) < MaxRequest ->
+			Reserved = element(7, Object),
+			CcRequestNumber = element(6, Object) + 1,
+			Object1 = erlang:setelement(6, Object, CcRequestNumber),
 			UsuSize = rand:uniform(Reserved),
-			Object2 = erlang:setelement(6, Object1, Reserved - UsuSize),
+			Object2 = erlang:setelement(7, Object1, Reserved - UsuSize),
 			ets:insert(service, Object2),
 			USU = #'3gpp_ro_Used-Service-Unit'{'CC-Total-Octets' = [UsuSize]},
 			RSU = #'3gpp_ro_Requested-Service-Unit'{},
@@ -172,13 +171,14 @@ ccr(state_timeout, _EventContent,
 			Request#'3gpp_ro_CCR'{
 					'CC-Request-Type' = ?'3GPP_CC-REQUEST-TYPE_UPDATE_REQUEST',
 					'CC-Request-Number' = CcRequestNumber,
+					'Subscription-Id' = [sub_id(element(2, Object), SubId)],
 					'Multiple-Services-Credit-Control' = [MSCC]};
-		[Object] when size(Object) == 6 ->
-			Reserved = element(6, Object),
-			CcRequestNumber = element(5, Object) + 1,
-			Object1 = erlang:setelement(5, Object, CcRequestNumber),
+		[Object] when size(Object) == 7 ->
+			Reserved = element(7, Object),
+			CcRequestNumber = element(6, Object) + 1,
+			Object1 = erlang:setelement(6, Object, CcRequestNumber),
 			UsuSize = rand:uniform(Reserved),
-			Object2 = erlang:setelement(6, Object1, Reserved - UsuSize),
+			Object2 = erlang:setelement(7, Object1, Reserved - UsuSize),
 			ets:insert(service, Object2),
 			USU = #'3gpp_ro_Used-Service-Unit'{'CC-Total-Octets' = [UsuSize]},
 			MSCC = #'3gpp_ro_Multiple-Services-Credit-Control'{
@@ -186,6 +186,7 @@ ccr(state_timeout, _EventContent,
 			Request#'3gpp_ro_CCR'{
 					'CC-Request-Type' = ?'3GPP_CC-REQUEST-TYPE_TERMINATION_REQUEST',
 					'CC-Request-Number' = CcRequestNumber,
+					'Subscription-Id' = [sub_id(element(2, Object), SubId)],
 					'Multiple-Services-Credit-Control' = [MSCC]}
 	end,
 	case diameter:call(Service, ?RO_APPLICATION, Request1,
@@ -233,7 +234,7 @@ cca(cast, {ok, #'3gpp_ro_CCA'{'Session-Id' = Session,
 		#statedata{session = Session, start = Start, cursor = Identity,
 		count = Count} = Data) ->
 	[Object] = ets:lookup(service, Identity),
-	Object1 = setelement(6, Object, element(6, Object) + GsuSize),
+	Object1 = setelement(7, Object, element(6, Object) + GsuSize),
 	ets:insert(service, Object1),
 	NewData = Data#statedata{session = undefined,
 			cursor = ets:next(service, Identity), count = Count + 1},
@@ -252,8 +253,8 @@ cca(cast, {ok, #'3gpp_ro_CCA'{'Session-Id' = Session,
 		#statedata{session = Session, start = Start, cursor = Identity,
 		count = Count} = Data) ->
 	[Object] = ets:lookup(service, Identity),
-	Object1 = erlang:delete_element(6, Object),
-	Object2 = erlang:delete_element(5, Object1),
+	Object1 = erlang:delete_element(7, Object),
+	Object2 = erlang:delete_element(6, Object1),
 	ets:insert(service, Object2),
 	NewData = Data#statedata{session = undefined,
 			cursor = ets:next(service, Identity), count = Count + 1},
@@ -342,4 +343,15 @@ timeout(Start, EventContent,
 			0
 	end,
 	[{state_timeout, Time, EventContent}].
+
+-spec sub_id(Type, R) -> R
+	when
+		Type :: imsi | msisdn,
+		R :: #'3gpp_ro_Subscription-Id'{}.
+%% @doc Add `Subscription-Id' type. 
+%% @hidden
+sub_id(imsi, R) ->
+	R#'3gpp_ro_Subscription-Id'{'Subscription-Id-Type' = ?'3GPP_SUBSCRIPTION-ID-TYPE_END_USER_IMSI'};
+sub_id(msisdn, R) ->
+	R#'3gpp_ro_Subscription-Id'{'Subscription-Id-Type' = ?'3GPP_SUBSCRIPTION-ID-TYPE_END_USER_E164'}.
 
