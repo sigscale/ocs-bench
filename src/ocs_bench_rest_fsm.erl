@@ -525,7 +525,7 @@ timeout(Start, EventContent,
 %% @private
 sub_id(Prefix, N) ->
 	Charset = lists:seq($0, $9),
-	sub_id(Charset, N, Prefix).
+	sub_id(Charset, N, lists:reverse(Prefix)).
 %% @hidden
 sub_id(_, 0, Acc) ->
 	lists:reverse(Acc);
