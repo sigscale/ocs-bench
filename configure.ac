@@ -5,8 +5,8 @@
 ##
 ## Boilerplate:  standard boilerplate code
 ##
-AC_INIT([ocs_bench], [1.0.0], [issues@sigscale.org])
-AC_COPYRIGHT([Copyright (c) 2020 SigScale Global Inc.])
+AC_INIT([ocs_bench], [1.1.0], [issues@sigscale.org])
+AC_COPYRIGHT([Copyright (c) 2020-2021 SigScale Global Inc.])
 AC_PREREQ(2.63)
 AC_CONFIG_SRCDIR([src/ocs_bench_app.erl])
 AC_CONFIG_HEADERS([config.h])

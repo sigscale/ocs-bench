@@ -1,3 +1,13 @@
+2021-09-16  Vance Shipley <vances@sigscale.org>
+
+	* configurable subscriber-id pattern and type (imsi|msisdn)
+	* format session id as binary
+	* add include dir
+	* include session in state data to maintain consistency
+	* include empty rsu in initial ccr
+	* include empty rsu in inital ccr
+	* include mnesia in release, load only
+
 2020-09-09  Vance Shipley <vances@sigscale.org>
 
 	* use balance adjustment instead of topup
