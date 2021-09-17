@@ -1,7 +1,7 @@
 %%% ocs_bench.erl
 %%% vim: ts=3
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% @copyright 2020 SigScale Global Inc.
+%%% @copyright 2020-2021 SigScale Global Inc.
 %%% @end
 %%% Licensed under the Apache License, Version 2.0 (the "License");
 %%% you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 %%%   {@link //ocs_bench. ocs_bench} application.
 %%%
 -module(ocs_bench).
--copyright('Copyright (c) 2020 SigScale Global Inc.').
+-copyright('Copyright (c) 2020-2021 SigScale Global Inc.').
 
 %% export the ocs_bench  public API
 -export([]).

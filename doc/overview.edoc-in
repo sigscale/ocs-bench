@@ -1,4 +1,4 @@
-@copyright 2020 SigScale Global Inc.
+@copyright 2020-2021 SigScale Global Inc.
 @version %VERSION%
 @title %DESCRIPTION%
 @doc This application implements a DIAMETER client for load testing.
