@@ -46,6 +46,8 @@ application environment variables (`~/releases/<VERSION>/sys.config'):
 		<dd>Defines the type and pattern of `Subscription-Id' as `{Type, Prefix, N}'.
 				`Type' may be `imsi' or `msisdn'. Generated values shall
 				have `N' random digits after `Prefix'. (default: `{imsi, "001001", 10}'</dd>
+	<dt>`rate_groups'</dt>
+		<dd>List of `Rating-Group' values to include in MSCCs. (default: `[1]')</dd>
 	<dt>`rest_uri'</dt>
 		<dd>URI of the REST interface of the system under test. (default: `"http://localhost:8080"'</dd>
 	<dt>`rest_user'</dt>

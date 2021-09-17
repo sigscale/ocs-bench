@@ -23,6 +23,7 @@
 			{mean, 1},
 			{deviation, 10},
 			{sub_id, {imsi, "001001", 10}},
+			{rate_groups, [1]},
 			{rest_uri, "http://localhost:8080"},
 			{rest_user, "admin"},
 			{rest_pass, "admin"},
