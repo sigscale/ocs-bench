@@ -145,24 +145,13 @@ ccr(state_timeout, _EventContent,
 					'PS-Information' = [#'3gpp_ro_PS-Information'{
 							'3GPP-SGSN-MCC-MNC' = ["001001"]}]}]},
 	MaxRequest = rand:uniform(25),
-	Request1 = case ets:lookup(service, Identity) of
-		[Object] when size(Object) == 5 ->
-			CcRequestNumber = 0,
-			RSU = #'3gpp_ro_Requested-Service-Unit'{},
-			MSCC = #'3gpp_ro_Multiple-Services-Credit-Control'{
-					'Requested-Service-Unit' = [RSU]},
-			Request#'3gpp_ro_CCR'{
-					'CC-Request-Type' = ?'3GPP_CC-REQUEST-TYPE_INITIAL_REQUEST',
-					'CC-Request-Number' = CcRequestNumber,
-					'Subscription-Id' = [sub_id(element(2, Object), SubId)],
-					'Multiple-Services-Credit-Control' = [MSCC]};
-		[Object] when element(6, Object) < MaxRequest ->
-			Reserved = element(7, Object),
-			CcRequestNumber = element(6, Object) + 1,
-			Object1 = erlang:setelement(6, Object, CcRequestNumber),
+		[{_, Service}] when map_get(requestNumber, Service) < MaxRequest ->
+			Reserved = maps:get_key(reservedUnits, Service),
+			CcRequestNumber = maps:get_key(requestNumber, Service) + 1,
 			UsuSize = rand:uniform(Reserved),
-			Object2 = erlang:setelement(7, Object1, Reserved - UsuSize),
-			ets:insert(service, Object2),
+			NewService = Service#{requestNumber := CcRequestNumber,
+					reserved => Reserved - UsuSize},
+			ets:insert(service, NewService),
 			USU = #'3gpp_ro_Used-Service-Unit'{'CC-Total-Octets' = [UsuSize]},
 			RSU = #'3gpp_ro_Requested-Service-Unit'{},
 			MSCC = #'3gpp_ro_Multiple-Services-Credit-Control'{
@@ -171,22 +160,33 @@ ccr(state_timeout, _EventContent,
 			Request#'3gpp_ro_CCR'{
 					'CC-Request-Type' = ?'3GPP_CC-REQUEST-TYPE_UPDATE_REQUEST',
 					'CC-Request-Number' = CcRequestNumber,
-					'Subscription-Id' = [sub_id(element(2, Object), SubId)],
+					'Subscription-Id' = [sub_id(maps:get(idType, Service), SubId)],
 					'Multiple-Services-Credit-Control' = [MSCC]};
-		[Object] when size(Object) == 7 ->
-			Reserved = element(7, Object),
-			CcRequestNumber = element(6, Object) + 1,
-			Object1 = erlang:setelement(6, Object, CcRequestNumber),
+		[{_, Service}] when map_get(requestNumber, Service) == MaxRequest ->
+			Reserved = maps:get_key(reservedUnits, Service),
+			CcRequestNumber = maps:get_key(requestNumber, Service) + 1,
 			UsuSize = rand:uniform(Reserved),
-			Object2 = erlang:setelement(7, Object1, Reserved - UsuSize),
-			ets:insert(service, Object2),
+			NewService = Service#{requestNumber := CcRequestNumber,
+					reserved => Reserved - UsuSize},
+			ets:insert(service, NewService),
 			USU = #'3gpp_ro_Used-Service-Unit'{'CC-Total-Octets' = [UsuSize]},
 			MSCC = #'3gpp_ro_Multiple-Services-Credit-Control'{
 					'Used-Service-Unit' = [USU]},
 			Request#'3gpp_ro_CCR'{
 					'CC-Request-Type' = ?'3GPP_CC-REQUEST-TYPE_TERMINATION_REQUEST',
 					'CC-Request-Number' = CcRequestNumber,
-					'Subscription-Id' = [sub_id(element(2, Object), SubId)],
+					'Subscription-Id' = [sub_id(maps:get(idType, Service), SubId)],
+					'Multiple-Services-Credit-Control' = [MSCC]};
+		[{_, Service}] ->
+			CcRequestNumber = 0,
+			ets:insert(service, Service#{requestNumber => CcRequestNumber}),
+			RSU = #'3gpp_ro_Requested-Service-Unit'{},
+			MSCC = #'3gpp_ro_Multiple-Services-Credit-Control'{
+					'Requested-Service-Unit' = [RSU]},
+			Request#'3gpp_ro_CCR'{
+					'CC-Request-Type' = ?'3GPP_CC-REQUEST-TYPE_INITIAL_REQUEST',
+					'CC-Request-Number' = CcRequestNumber,
+					'Subscription-Id' = [sub_id(maps:get(idType, Service), SubId)],
 					'Multiple-Services-Credit-Control' = [MSCC]}
 	end,
 	case diameter:call(Service, ?RO_APPLICATION, Request1,
@@ -211,17 +211,15 @@ cca(enter = _EventType, _EventContent, _Data) ->
 	keep_state_and_data;
 cca(cast, {ok, #'3gpp_ro_CCA'{'Session-Id' = Session,
 		'CC-Request-Type' = ?'3GPP_CC-REQUEST-TYPE_INITIAL_REQUEST',
-		'CC-Request-Number' = CcRequestNumber,
 		'Multiple-Services-Credit-Control' = [#'3gpp_ro_Multiple-Services-Credit-Control'{
 				'Granted-Service-Unit' = [#'3gpp_ro_Granted-Service-Unit'{
 						'CC-Total-Octets' = [GsuSize]}]}],
 		'Result-Code' = ?'DIAMETER_BASE_RESULT-CODE_SUCCESS'} = _CCA},
 		#statedata{session = Session, start = Start, cursor = Identity,
 		count = Count} = Data) ->
-	[Object] = ets:lookup(service, Identity),
-	Object1 = erlang:append_element(Object, CcRequestNumber),
-	Object2 = erlang:append_element(Object1, GsuSize),
-	ets:insert(service, Object2),
+	[{_, Service}] = ets:lookup(service, Identity),
+	NewService = Service#{reserved => GsuSize},
+	ets:insert(service, NewService),
 	NewData = Data#statedata{session = undefined,
 			cursor = ets:next(service, Identity), count = Count + 1},
 	{next_state, ccr, NewData, timeout(Start, next, NewData)};
@@ -233,9 +231,9 @@ cca(cast, {ok, #'3gpp_ro_CCA'{'Session-Id' = Session,
 		'Result-Code' = ?'DIAMETER_BASE_RESULT-CODE_SUCCESS'} = _CCA},
 		#statedata{session = Session, start = Start, cursor = Identity,
 		count = Count} = Data) ->
-	[Object] = ets:lookup(service, Identity),
-	Object1 = setelement(7, Object, element(7, Object) + GsuSize),
-	ets:insert(service, Object1),
+	[{_, Service}] = ets:lookup(service, Identity),
+	NewService = Service#{reserved => maps:get(reserved, Service) + GsuSize},
+	ets:insert(service, NewService),
 	NewData = Data#statedata{session = undefined,
 			cursor = ets:next(service, Identity), count = Count + 1},
 	{next_state, ccr, NewData, timeout(Start, next, NewData)};
@@ -252,10 +250,9 @@ cca(cast, {ok, #'3gpp_ro_CCA'{'Session-Id' = Session,
 		'Result-Code' = ?'DIAMETER_BASE_RESULT-CODE_SUCCESS'} = _CCA},
 		#statedata{session = Session, start = Start, cursor = Identity,
 		count = Count} = Data) ->
-	[Object] = ets:lookup(service, Identity),
-	Object1 = erlang:delete_element(7, Object),
-	Object2 = erlang:delete_element(6, Object1),
-	ets:insert(service, Object2),
+	[{_, Service}] = ets:lookup(service, Identity),
+	NewService = maps:remove(reserved, maps:remove(requestNumber, Service)),
+	ets:insert(service, NewService),
 	NewData = Data#statedata{session = undefined,
 			cursor = ets:next(service, Identity), count = Count + 1},
 	{next_state, ccr, NewData, timeout(Start, next, NewData)};

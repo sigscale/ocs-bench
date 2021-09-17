@@ -273,7 +273,9 @@ service_response(info = _EventType,
 			end,
 			case lists:foldl(F, {undefined, undefined, undefined}, Chars) of
 				{Id, K, OPc} when is_list(Id) ->
-					ets:insert(service, {Id, IdType, K, OPc}),
+					Service = #{subscriptionId => Id,
+							idType => IdType, k => K, opc => OPc},
+					ets:insert(service, Service),
 					NewData = Data#statedata{request = undefined, count = Count + 1},
 					{next_state, service_request, NewData,
 							timeout(Start, next, NewData)};
@@ -350,8 +352,8 @@ product_response(info = _EventType,
 		cursor = ServiceId, count = Count} = Data) ->
 	case zj:decode(Body) of
 		{ok, #{"id" := ProductId} = _Product} ->
-			[Object] = ets:lookup(service, ServiceId),
-			true = ets:insert(service, erlang:append_element(Object, ProductId)),
+			[{_, Service}] = ets:lookup(service, ServiceId),
+			true = ets:insert(service, Service#{productId => ProductId}),
 			NewData = Data#statedata{request = undefined,
 					cursor = ets:next(service, ServiceId), count = Count + 1},
 			{next_state, product_request, NewData, timeout(Start, next, NewData)};
@@ -397,7 +399,7 @@ balance_request(state_timeout, _EventContent,
 		#statedata{cursor = ServiceId,
 		uri = Uri, auth = Authorization} = Data) ->
 	Start = erlang:system_time(millisecond),
-	[{_, _, _, _, ProductId}] = ets:lookup(service, ServiceId),
+	[{_, #{productId := ProductId}}] = ets:lookup(service, ServiceId),
 	Path = Uri ++ "/balanceManagement/v1/balanceAdjustment",
 	ContentType = "application/json",
 	Accept = {"accept", ContentType},
