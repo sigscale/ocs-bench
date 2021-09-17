@@ -117,43 +117,43 @@ init(_Args) ->
 %%
 ccr(enter = _EventType, ccr = _EventContent, Data) ->
 	?LOG_INFO("Begin phase 4: start user sessions"),
-	{keep_state, Data#statedata{count = 0, cursor = ets:first(service)}};
+	{keep_state, Data#statedata{count = 0, cursor = ets:first(subscriber)}};
 ccr(enter, _EventContent,
 		#statedata{cursor = '$end_of_table'} = Data) ->
-	{keep_state, Data#statedata{cursor = ets:first(service)}};
+	{keep_state, Data#statedata{cursor = ets:first(subscriber)}};
 ccr(enter, _EventContent, _Data) ->
 	keep_state_and_data;
 ccr(state_timeout, _EventContent,
 		#statedata{cursor = '$end_of_table'} = Data) ->
 	{stop, normal, Data};
 ccr(state_timeout, _EventContent,
-		#statedata{cursor = Identity, service = Service,
+		#statedata{cursor = SubscriberId, service = Service,
 		orig_host = OriginHost, orig_realm = OriginRealm,
 		dest_realm = DestinationRealm} = Data) ->
 	Start = erlang:system_time(millisecond),
-	case ets:lookup(service, Identity) of
-		[{_, #{ccaPpending := true} = Service}] ->
-			NewData = Data#statedata{cursor = ets:next(service, Identity)},
+	case ets:lookup(subscriber, SubscriberId) of
+		[{_, #{ccaPpending := true} = _Subscriber}] ->
+			NewData = Data#statedata{cursor = ets:next(subscriber, SubscriberId)},
 			{keept_state, NewData, timeout(Start, next, NewData)};
-		[{_, #{} = Service}] ->
+		[{_, #{} = Subscriber}] ->
 			Session = list_to_binary(diameter:session_id(binary_to_list(OriginHost))),
-			SubId = #'3gpp_ro_Subscription-Id'{'Subscription-Id-Data' = Identity},
+			SubId = #'3gpp_ro_Subscription-Id'{'Subscription-Id-Data' = SubscriberId},
 			Request = #'3gpp_ro_CCR'{'Session-Id' = Session,
 					'Origin-Host' = OriginHost,
 					'Origin-Realm' = OriginRealm,
 					'Destination-Realm' = DestinationRealm,
 					'Auth-Application-Id' = ?RO_APPLICATION_ID,
 					'Service-Context-Id' = "32251@3gpp.org",
-					'User-Name' = [Identity],
+					'User-Name' = [SubscriberId],
 					'Multiple-Services-Indicator' = [?'3GPP_MULTIPLE-SERVICES-INDICATOR_MULTIPLE_SERVICES_SUPPORTED'],
 					'Service-Information' = [#'3gpp_ro_Service-Information'{
 							'PS-Information' = [#'3gpp_ro_PS-Information'{
 									'3GPP-SGSN-MCC-MNC' = ["001001"]}]}]},
 			MaxRequest = rand:uniform(25),
-			Request1 = case maps:find(requestNumber, Service) of
+			Request1 = case maps:find(requestNumber, Subscriber) of
 				error ->
 					CcRequestNumber = 0,
-					ets:insert(service, Service#{pending => true,
+					ets:insert(subscriber, Subscriber#{pending => true,
 							requestNumber => CcRequestNumber}),
 					RSU = #'3gpp_ro_Requested-Service-Unit'{},
 					MSCC = #'3gpp_ro_Multiple-Services-Credit-Control'{
@@ -161,14 +161,14 @@ ccr(state_timeout, _EventContent,
 					Request#'3gpp_ro_CCR'{
 							'CC-Request-Type' = ?'3GPP_CC-REQUEST-TYPE_INITIAL_REQUEST',
 							'CC-Request-Number' = CcRequestNumber,
-							'Subscription-Id' = [sub_id(maps:get(idType, Service), SubId)],
+							'Subscription-Id' = [sub_id(maps:get(idType, Subscriber), SubId)],
 							'Multiple-Services-Credit-Control' = [MSCC]};
 				{ok, CcRequestNumber} when CcRequestNumber < MaxRequest ->
-					Reserved = maps:get_key(reservedUnits, Service),
+					Reserved = maps:get_key(reservedUnits, Subscriber),
 					UsuSize = rand:uniform(Reserved),
-					NewService = Service#{pending := true,
+					NewSubscriber = Subscriber#{pending := true,
 							requestNumber := CcRequestNumber, reserved => Reserved - UsuSize},
-					ets:insert(service, NewService),
+					ets:insert(subscriber, NewSubscriber),
 					USU = #'3gpp_ro_Used-Service-Unit'{'CC-Total-Octets' = [UsuSize]},
 					RSU = #'3gpp_ro_Requested-Service-Unit'{},
 					MSCC = #'3gpp_ro_Multiple-Services-Credit-Control'{
@@ -177,22 +177,22 @@ ccr(state_timeout, _EventContent,
 					Request#'3gpp_ro_CCR'{
 							'CC-Request-Type' = ?'3GPP_CC-REQUEST-TYPE_UPDATE_REQUEST',
 							'CC-Request-Number' = CcRequestNumber,
-							'Subscription-Id' = [sub_id(maps:get(idType, Service), SubId)],
+							'Subscription-Id' = [sub_id(maps:get(idType, Subscriber), SubId)],
 							'Multiple-Services-Credit-Control' = [MSCC]};
 				{ok, MaxRequest} ->
-					Reserved = maps:get_key(reservedUnits, Service),
-					CcRequestNumber = maps:get_key(requestNumber, Service) + 1,
+					Reserved = maps:get_key(reservedUnits, Subscriber),
+					CcRequestNumber = maps:get_key(requestNumber, Subscriber) + 1,
 					UsuSize = rand:uniform(Reserved),
-					NewService = Service#{pending := true,
+					NewSubscriber= Subscriber#{pending := true,
 							requestNumber := CcRequestNumber, reserved => Reserved - UsuSize},
-					ets:insert(service, NewService),
+					ets:insert(subscriber, NewSubscriber),
 					USU = #'3gpp_ro_Used-Service-Unit'{'CC-Total-Octets' = [UsuSize]},
 					MSCC = #'3gpp_ro_Multiple-Services-Credit-Control'{
 							'Used-Service-Unit' = [USU]},
 					Request#'3gpp_ro_CCR'{
 							'CC-Request-Type' = ?'3GPP_CC-REQUEST-TYPE_TERMINATION_REQUEST',
 							'CC-Request-Number' = CcRequestNumber,
-							'Subscription-Id' = [sub_id(maps:get(idType, Service), SubId)],
+							'Subscription-Id' = [sub_id(maps:get(idType, Subscriber), SubId)],
 							'Multiple-Services-Credit-Control' = [MSCC]}
 			end,
 			case diameter:call(Service, ?RO_APPLICATION, Request1,
@@ -222,13 +222,13 @@ cca(cast, {ok, #'3gpp_ro_CCA'{'Session-Id' = Session,
 				'Granted-Service-Unit' = [#'3gpp_ro_Granted-Service-Unit'{
 						'CC-Total-Octets' = [GsuSize]}]}],
 		'Result-Code' = ?'DIAMETER_BASE_RESULT-CODE_SUCCESS'} = _CCA},
-		#statedata{session = Session, start = Start, cursor = Identity,
+		#statedata{session = Session, start = Start, cursor = SubscriberId,
 		count = Count} = Data) ->
-	[{_, Service}] = ets:lookup(service, Identity),
-	NewService = Service#{pending := false, reserved => GsuSize},
-	ets:insert(service, NewService),
+	[{_, Subscriber}] = ets:lookup(subscriber, SubscriberId),
+	NewSubscriber = Subscriber#{pending := false, reserved => GsuSize},
+	ets:insert(subscriber, NewSubscriber),
 	NewData = Data#statedata{session = undefined,
-			cursor = ets:next(service, Identity), count = Count + 1},
+			cursor = ets:next(subscriber, SubscriberId), count = Count + 1},
 	{next_state, ccr, NewData, timeout(Start, next, NewData)};
 cca(cast, {ok, #'3gpp_ro_CCA'{'Session-Id' = Session,
 		'CC-Request-Type' = ?'3GPP_CC-REQUEST-TYPE_UPDATE_REQUEST',
@@ -236,40 +236,40 @@ cca(cast, {ok, #'3gpp_ro_CCA'{'Session-Id' = Session,
 				'Granted-Service-Unit' = [#'3gpp_ro_Granted-Service-Unit'{
 						'CC-Total-Octets' = [GsuSize]}]}],
 		'Result-Code' = ?'DIAMETER_BASE_RESULT-CODE_SUCCESS'} = _CCA},
-		#statedata{session = Session, start = Start, cursor = Identity,
+		#statedata{session = Session, start = Start, cursor = SubscriberId,
 		count = Count} = Data) ->
-	[{_, Service}] = ets:lookup(service, Identity),
-	NewService = Service#{pending := false,
-			reserved => maps:get(reserved, Service) + GsuSize},
-	ets:insert(service, NewService),
+	[{_, Subscriber}] = ets:lookup(subscriber, SubscriberId),
+	NewSubscriber = Subscriber#{pending := false,
+			reserved => maps:get(reserved, Subscriber) + GsuSize},
+	ets:insert(subscriber, NewSubscriber),
 	NewData = Data#statedata{session = undefined,
-			cursor = ets:next(service, Identity), count = Count + 1},
+			cursor = ets:next(subscriber, SubscriberId), count = Count + 1},
 	{next_state, ccr, NewData, timeout(Start, next, NewData)};
 cca(cast, {ok, #'3gpp_ro_CCA'{'Session-Id' = Session,
 		'CC-Request-Type' = ?'3GPP_CC-REQUEST-TYPE_UPDATE_REQUEST',
 		'Result-Code' = ?'DIAMETER_BASE_RESULT-CODE_SUCCESS'} = _CCA},
-		#statedata{session = Session, start = Start, cursor = Identity,
+		#statedata{session = Session, start = Start, cursor = SubscriberId,
 		count = Count} = Data) ->
-	[{_, Service}] = ets:lookup(service, Identity),
-	ets:insert(service, Service#{pending := false}),
+	[{_, Subscriber}] = ets:lookup(subscriber, SubscriberId),
+	ets:insert(subscriber, Subscriber#{pending := false}),
 	NewData = Data#statedata{session = undefined,
-			cursor = ets:next(service, Identity), count = Count + 1},
+			cursor = ets:next(subscriber, SubscriberId), count = Count + 1},
 	{next_state, ccr, NewData, timeout(Start, next, NewData)};
 cca(cast, {ok, #'3gpp_ro_CCA'{'Session-Id' = Session,
 		'CC-Request-Type' = ?'3GPP_CC-REQUEST-TYPE_TERMINATION_REQUEST',
 		'Result-Code' = ?'DIAMETER_BASE_RESULT-CODE_SUCCESS'} = _CCA},
-		#statedata{session = Session, start = Start, cursor = Identity,
+		#statedata{session = Session, start = Start, cursor = SubscriberId,
 		count = Count} = Data) ->
-	[{_, Service}] = ets:lookup(service, Identity),
-	NewService = maps:remove(reserved, maps:remove(requestNumber, Service)),
-	ets:insert(service, NewService#{pending := false}),
+	[{_, Subscriber}] = ets:lookup(subscriber, SubscriberId),
+	NewSubscriber = maps:remove(reserved, maps:remove(requestNumber, Subscriber)),
+	ets:insert(subscriber, NewSubscriber#{pending := false}),
 	NewData = Data#statedata{session = undefined,
-			cursor = ets:next(service, Identity), count = Count + 1},
+			cursor = ets:next(subscriber, SubscriberId), count = Count + 1},
 	{next_state, ccr, NewData, timeout(Start, next, NewData)};
 cca(cast, {ok, #'3gpp_ro_CCA'{'Result-Code' = ?'DIAMETER_CC_APP_RESULT-CODE_CREDIT_LIMIT_REACHED'} = _CCA},
-		#statedata{start = Start, cursor = Identity, count = Count} = Data) ->
-	NewData = Data#statedata{cursor = ets:next(service, Identity), count = Count + 1},
-	ets:delete(service, Identity),
+		#statedata{start = Start, cursor = SubscriberId, count = Count} = Data) ->
+	NewData = Data#statedata{cursor = ets:next(subscriber, SubscriberId), count = Count + 1},
+	ets:delete(subscriber, SubscriberId),
 	{next_state, ccr, NewData, timeout(Start, next, NewData)};
 cca(cast, {ok, #'3gpp_ro_CCA'{'Result-Code' = ResultCode}}, Data) ->
 	{stop, ResultCode, Data};

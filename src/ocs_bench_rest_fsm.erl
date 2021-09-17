@@ -102,7 +102,7 @@ init([Address]) ->
 	UserPass = User ++ ":" ++ Password,
 	BasicAuth = base64:encode_to_string(UserPass),
 	Authorization = {"authorization", "Basic " ++ BasicAuth},
-	service = ets:new(service, [public, named_table]),
+	subscriber = ets:new(subscriber, [public, named_table]),
 	Data = #statedata{active = Active, mean = Mean,
 			deviation = Deviation, uri = Uri,
 			id_type = IdType, id_prefix = Prefix, id_n = N,
@@ -210,7 +210,7 @@ client_response(info = _EventType, {http, {RequestId, {error, Reason}}},
 %%
 service_request(enter = _EventType, client_response = _EventContent, Data) ->
 	?LOG_INFO("Begin phase 1: add service identifiers"),
-	{keep_state, Data#statedata{count = 0, cursor = ets:first(service)}};
+	{keep_state, Data#statedata{count = 0, cursor = ets:first(subscriber)}};
 service_request(enter, service_response, _Data) ->
 	keep_state_and_data;
 service_request(state_timeout, next,
@@ -273,9 +273,9 @@ service_response(info = _EventType,
 			end,
 			case lists:foldl(F, {undefined, undefined, undefined}, Chars) of
 				{Id, K, OPc} when is_list(Id) ->
-					Service = #{subscriptionId => Id,
+					Subscriber = #{subscriptionId => Id,
 							idType => IdType, k => K, opc => OPc},
-					ets:insert(service, Service),
+					ets:insert(subscription, Subscriber),
 					NewData = Data#statedata{request = undefined, count = Count + 1},
 					{next_state, service_request, NewData,
 							timeout(Start, next, NewData)};
@@ -304,7 +304,7 @@ service_response(info = _EventType, {http, {RequestId, {error, Reason}}},
 %%
 product_request(enter = _EventType, service_request = _EventContent, Data) ->
 	?LOG_INFO("Begin phase 2: add product subscriptions"),
-	{keep_state, Data#statedata{count = 0, cursor = ets:first(service)}};
+	{keep_state, Data#statedata{count = 0, cursor = ets:first(subscriber)}};
 product_request(enter, product_response, _Data) ->
 	keep_state_and_data;
 product_request(state_timeout, next,
@@ -313,7 +313,7 @@ product_request(state_timeout, next,
 	Start = erlang:system_time(millisecond),
 	{next_state, balance_request, Data, timeout(Start, start, Data)};
 product_request(state_timeout, _EventContent,
-		#statedata{cursor = ServiceId,
+		#statedata{cursor = SubscriberId,
 		uri = Uri, auth = Authorization} = Data) ->
 	Start = erlang:system_time(millisecond),
 	Path = Uri ++ "/productInventoryManagement/v2/product/",
@@ -322,8 +322,8 @@ product_request(state_timeout, _EventContent,
 	RequestHeaders = [Authorization, Accept],
 	OfferRef = #{"id" => "Data (10G)",
 			"href" => "/catalogManagement/v2/productOffering/Data (10G)"},
-	ServiceRef = #{"id" => ServiceId,
-			"href" => "/serviceInventoryManagement/v2/service/" ++ ServiceId},
+	ServiceRef = #{"id" => SubscriberId,
+			"href" => "/serviceInventoryManagement/v2/service/" ++ SubscriberId},
 	RequestBody = zj:encode(#{"productOffering" => OfferRef,
 			"realizingService" => [ServiceRef]}),
 	Request = {Path, RequestHeaders, ContentType, RequestBody},
@@ -349,13 +349,13 @@ product_response(enter = _EventType, _EventContent, _Data) ->
 product_response(info = _EventType,
 		{http, {RequestId, {{_, 201, _}, _Headers, Body}}} = _EventContent,
 		#statedata{request = RequestId, start = Start,
-		cursor = ServiceId, count = Count} = Data) ->
+		cursor = SubscriberId, count = Count} = Data) ->
 	case zj:decode(Body) of
 		{ok, #{"id" := ProductId} = _Product} ->
-			[{_, Service}] = ets:lookup(service, ServiceId),
-			true = ets:insert(service, Service#{productId => ProductId}),
+			[{_, Subscriber}] = ets:lookup(subscriber, SubscriberId),
+			true = ets:insert(subscriber, Subscriber#{productId => ProductId}),
 			NewData = Data#statedata{request = undefined,
-					cursor = ets:next(service, ServiceId), count = Count + 1},
+					cursor = ets:next(subscriber, SubscriberId), count = Count + 1},
 			{next_state, product_request, NewData, timeout(Start, next, NewData)};
 		{ok, #{}} ->
 			{stop, missing_id, Data};
@@ -381,7 +381,7 @@ product_response(info = _EventType, {http, {RequestId, {error, Reason}}},
 %%
 balance_request(enter = _EventType, product_request = _EventContent, Data) ->
 	?LOG_INFO("Begin phase 3: add balance buckets"),
-	{keep_state, Data#statedata{count = 0, cursor = ets:first(service)}};
+	{keep_state, Data#statedata{count = 0, cursor = ets:first(subscriber)}};
 balance_request(enter, balance_response, _Data) ->
 	keep_state_and_data;
 balance_request(state_timeout, next,
@@ -390,16 +390,16 @@ balance_request(state_timeout, next,
 	?LOG_INFO("End phase 3: added ~b balance buckets", [Count]),
 	case supervisor:start_child(ocs_bench_diameter_service_fsm_sup, [[Address], []]) of
 		{ok, Fsm} ->
-			ets:give_away(service, Fsm, []),
+			ets:give_away(subscriber, Fsm, []),
 			{stop, normal, Data};
 		{error, Reason} ->
 			{stop, Reason, Data}
 	end;
 balance_request(state_timeout, _EventContent,
-		#statedata{cursor = ServiceId,
+		#statedata{cursor = SubscriberId,
 		uri = Uri, auth = Authorization} = Data) ->
 	Start = erlang:system_time(millisecond),
-	[{_, #{productId := ProductId}}] = ets:lookup(service, ServiceId),
+	[{_, #{productId := ProductId}}] = ets:lookup(subscriber, SubscriberId),
 	Path = Uri ++ "/balanceManagement/v1/balanceAdjustment",
 	ContentType = "application/json",
 	Accept = {"accept", ContentType},
@@ -432,9 +432,9 @@ balance_response(enter = _EventType, _EventContent, _Data) ->
 balance_response(info = _EventType,
 		{http, {RequestId, {{_, 204, _}, _Headers, _Body}}},
 		#statedata{request = RequestId, start = Start,
-		cursor = ServiceId, count = Count} = Data) ->
+		cursor = SubscriberId, count = Count} = Data) ->
 	NewData = Data#statedata{request = undefined,
-			cursor = ets:next(service, ServiceId), count = Count + 1},
+			cursor = ets:next(subscriber, SubscriberId), count = Count + 1},
 	{next_state, balance_request, NewData, timeout(Start, next, NewData)};
 balance_response(info = _EventType,
 		{http, {RequestId, {{_, StatusCode, _}, _Headers, _Body}}},
