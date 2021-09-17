@@ -1,3 +1,13 @@
+2021-09-17  Vance Shipley <vances@sigscale.org>
+
+	* service id in mscc
+	* app env var for mscc rating groups
+	* rename service table to subscriber
+	* skip service with pending cca
+	* refactor with map for service state in ets
+	* correct updating reserved amoumt
+	* correct reversed prefix
+
 2021-09-16  Vance Shipley <vances@sigscale.org>
 
 	* configurable subscriber-id pattern and type (imsi|msisdn)
