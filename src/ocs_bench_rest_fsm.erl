@@ -275,7 +275,7 @@ service_response(info = _EventType,
 				{Id, K, OPc} when is_list(Id) ->
 					Subscriber = #{subscriptionId => Id,
 							idType => IdType, k => K, opc => OPc},
-					ets:insert(subscription, Subscriber),
+					ets:insert(subscription, {Id, Subscriber}),
 					NewData = Data#statedata{request = undefined, count = Count + 1},
 					{next_state, service_request, NewData,
 							timeout(Start, next, NewData)};
@@ -353,7 +353,7 @@ product_response(info = _EventType,
 	case zj:decode(Body) of
 		{ok, #{"id" := ProductId} = _Product} ->
 			[{_, Subscriber}] = ets:lookup(subscriber, SubscriberId),
-			true = ets:insert(subscriber, Subscriber#{productId => ProductId}),
+			true = ets:insert(subscriber, {SubscriberId, Subscriber#{productId => ProductId}}),
 			NewData = Data#statedata{request = undefined,
 					cursor = ets:next(subscriber, SubscriberId), count = Count + 1},
 			{next_state, product_request, NewData, timeout(Start, next, NewData)};
