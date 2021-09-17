@@ -275,7 +275,7 @@ service_response(info = _EventType,
 				{Id, K, OPc} when is_list(Id) ->
 					Subscriber = #{subscriptionId => Id,
 							idType => IdType, k => K, opc => OPc},
-					ets:insert(subscription, {Id, Subscriber}),
+					ets:insert(subscriber, {Id, Subscriber}),
 					NewData = Data#statedata{request = undefined, count = Count + 1},
 					{next_state, service_request, NewData,
 							timeout(Start, next, NewData)};
