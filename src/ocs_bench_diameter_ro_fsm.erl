@@ -161,6 +161,7 @@ ccr(state_timeout, _EventContent,
 							requestNumber => RequestNumber}),
 					RSU = #'3gpp_ro_Requested-Service-Unit'{},
 					MSCC = [#'3gpp_ro_Multiple-Services-Credit-Control'{
+							'Service-Identifier' = [1],
 							'Rating-Group' = [RG],
 							'Requested-Service-Unit' = [RSU]} || RG <- RateGroups],
 					Request#'3gpp_ro_CCR'{
@@ -174,8 +175,8 @@ ccr(state_timeout, _EventContent,
 							USU = #'3gpp_ro_Used-Service-Unit'{'CC-Total-Octets' = [UsuSize]},
 							RSU = #'3gpp_ro_Requested-Service-Unit'{},
 							MSCC = #'3gpp_ro_Multiple-Services-Credit-Control'{
-									'Rating-Group' = [RG], 'Used-Service-Unit' = [USU],
-									'Requested-Service-Unit' = [RSU]},
+									'Service-Identifier' = [1], 'Rating-Group' = [RG],
+									'Used-Service-Unit' = [USU], 'Requested-Service-Unit' = [RSU]},
 							{[MSCC | Acc1], [{RG, Reserve - UsuSize} | Acc2]}
 					end,
 					{MSCC, Reserved} = lists:foldl(F, {[], []},
@@ -195,7 +196,8 @@ ccr(state_timeout, _EventContent,
 							UsuSize = rand:uniform(Reserve),
 							USU = #'3gpp_ro_Used-Service-Unit'{'CC-Total-Octets' = [UsuSize]},
 							MSCC = #'3gpp_ro_Multiple-Services-Credit-Control'{
-									'Rating-Group' = [RG], 'Used-Service-Unit' = [USU]},
+									'Service-Identifier' = [1], 'Rating-Group' = [RG],
+									'Used-Service-Unit' = [USU]},
 							{[MSCC | Acc1], [{RG, Reserve - UsuSize} | Acc2]}
 					end,
 					{MSCC, Reserved} = lists:foldl(F, {[], []},
