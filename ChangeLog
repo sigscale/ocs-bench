@@ -1,5 +1,6 @@
 2021-09-19  Vance Shipley <vances@sigscale.org>
 
+	* remove request count after termination cca
 	* correct session-id
 	* correct maps module function name
 	* correct table name in ets event
