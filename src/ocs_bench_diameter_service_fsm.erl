@@ -140,7 +140,7 @@ wait_for_start(info,
 %%
 wait_for_peer(enter = _EventType, _EventContent, _Data) ->
 	keep_state_and_data;
-wait_for_peer(info, {'ETS-TRANSFER', service, _, []}, _Data) ->
+wait_for_peer(info, {'ETS-TRANSFER', subscriber, _, []}, _Data) ->
 	keep_state_and_data;
 wait_for_peer(info, #diameter_event{info = Event, service = Service},
 		#statedata{service = Service, transport = Ref} = Data)
