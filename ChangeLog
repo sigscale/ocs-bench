@@ -1,3 +1,10 @@
+2021-09-19  Vance Shipley <vances@sigscale.org>
+
+	* correct maps module function name
+	* correct table name in ets event
+	* correct table name
+	* correct ets insert
+
 2021-09-17  Vance Shipley <vances@sigscale.org>
 
 	* service id in mscc
