@@ -191,7 +191,7 @@ ccr(state_timeout, _EventContent,
 							'CC-Request-Number' = NewRequestNumber,
 							'Subscription-Id' = [sub_id(maps:get(idType, Subscriber), SubId)],
 							'Multiple-Services-Credit-Control' = lists:reverse(MSCC)}};
-				{ok, RequestNumber} when RequestNumber == MaxRequest ->
+				{ok, RequestNumber} when RequestNumber >= MaxRequest ->
 					F = fun({RG, Reserve}, {Acc1, Acc2}) ->
 							UsuSize = rand:uniform(Reserve),
 							USU = #'3gpp_ro_Used-Service-Unit'{'CC-Total-Octets' = [UsuSize]},
