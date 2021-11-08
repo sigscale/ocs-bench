@@ -1,0 +1,34 @@
+## SigScale OCS Bench Job
+##
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ocs-bench
+spec:
+  completions: 1
+  parallelism: 1
+  template:
+    spec:
+      containers:
+      - name: bench
+        image: asia.gcr.io/sigscale-ocs/bench
+        stdin: true
+        tty: true
+        args:
+        - '-ocs_bench'
+        - 'active'
+        - '100'
+        - '-ocs_bench'
+        - 'mean'
+        - '1'
+        - '-ocs_bench'
+        - 'deviation'
+        - '50'
+        - '-ocs_bench'
+        - 'rest_uri'
+        - '"http://10.1.2.3"'
+        - '-ocs_bench'
+        - 'remote_address'
+        - '"10.1.2.3"'
+      restartPolicy: Never
+      
