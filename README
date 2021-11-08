@@ -1,3 +1,6 @@
+#!/bin/false
+# Not a shell script!
+
 # SigScale OCS benchmarking tests (ocs_bench)
 
 ## Prerequisites
