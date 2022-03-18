@@ -97,7 +97,7 @@ init(_Args) ->
 	{ok, Mean} = application:get_env(mean),
 	{ok, Deviation} = application:get_env(deviation),
 	{ok, RateGroups} = application:get_env(rate_groups),
-	[Service] = diameter:services(),
+	[Service | _] = diameter:services(),
 	[Connection | _] = diameter:service_info(default, connections),
 	{_, Caps} = lists:keyfind(caps, 1, Connection),
 	{_, {OriginHost, _DestinationHost}} = lists:keyfind(origin_host, 1, Caps),
