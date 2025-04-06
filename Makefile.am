@@ -5,6 +5,11 @@
 
 SUBDIRS = ebin doc
 
+if HAVE_SYSTEMD
+systemdsystemunit_DATA = scripts/ocs_bench.service
+env_DATA = scripts/ocs_bench
+endif
+
 .PHONY: release
 release: $(PACKAGE_VERSION).tar.gz
 
