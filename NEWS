@@ -1,3 +1,11 @@
+April 6, 2025
+-------------
+	- Debian and Ubuntu packages
+	- Test harness and system under test diagram
+	- Modernize release package build
+	- Implement systemd support
+	- GKE and k8s instructions
+
 September 16, 2021
 ------------------
 	- Configurable Subscription-Id

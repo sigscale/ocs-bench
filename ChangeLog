@@ -1,3 +1,20 @@
+2025-04-06  Vance Shipley <vances@sigscale.org>
+
+	* debian package installation instructions
+	* link to built edoc
+	* add diagram of test harness and system under test
+	* modernize release package build
+	* release package name includes application name and version
+	* configure directory for systemd environment files
+	* install release package in reldir
+	* script used by debian postinst tto install release
+	* implement systemd support
+	* inets must be started before ocs_bench
+	* table of contents for user guide
+	* correct coding form
+	* gke and k8s instructions
+	* not a shell script :)
+
 2021-09-19  Vance Shipley <vances@sigscale.org>
 
 	* correct test for max requests
