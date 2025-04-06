@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:dc="http://purl.org/dc/elements/1.1/" version="1.1" xmlns:xl="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" viewBox="-489.0039 20.5 584.9408 402" width="584.9408" height="402">
+  <defs/>
+  <g id="benchmarking" stroke="none" stroke-dasharray="none" fill="none" stroke-opacity="1" fill-opacity="1">
+    <title>benchmarking</title>
+    <g id="benchmarking_Layer_1">
+      <title>Layer 1</title>
+      <g id="Graphic_33">
+        <path d="M -476.5039 25 L -242.5039 25 C -238.08563 25 -234.5039 28.581722 -234.5039 33 L -234.5039 410 C -234.5039 414.4183 -238.08563 418 -242.5039 418 L -476.5039 418 C -480.9222 418 -484.5039 414.4183 -484.5039 410 L -484.5039 33 C -484.5039 28.581722 -480.9222 25 -476.5039 25 Z" fill="white"/>
+        <path d="M -476.5039 25 L -242.5039 25 C -238.08563 25 -234.5039 28.581722 -234.5039 33 L -234.5039 410 C -234.5039 414.4183 -238.08563 418 -242.5039 418 L -476.5039 418 C -480.9222 418 -484.5039 414.4183 -484.5039 410 L -484.5039 33 C -484.5039 28.581722 -480.9222 25 -476.5039 25 Z" stroke="#1a2746" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+        <text transform="translate(-474.5039 35)" fill="black">
+          <tspan font-family="Montserrat" font-size="24" fill="black" x="38.956" y="23" xml:space="preserve">Test Harness</tspan>
+        </text>
+      </g>
+      <g id="Graphic_15">
+        <path d="M -417.0039 92.3574 L -302.0039 92.3574 C -297.58563 92.3574 -294.0039 95.93912 -294.0039 100.3574 L -294.0039 159.3574 C -294.0039 163.77568 -297.58563 167.3574 -302.0039 167.3574 L -417.0039 167.3574 C -421.4222 167.3574 -425.0039 163.77568 -425.0039 159.3574 L -425.0039 100.3574 C -425.0039 95.93912 -421.4222 92.3574 -417.0039 92.3574 Z" fill="#ffa900"/>
+        <text transform="translate(-420.0039 104.3574)" fill="white">
+          <tspan font-family="Montserrat" font-size="24" fill="white" x="37.496" y="23" xml:space="preserve">CTF</tspan>
+          <tspan font-family="Montserrat" font-size="18" fill="white" x="5.97009" y="46" xml:space="preserve">(</tspan>
+          <tspan font-family="Courier New" font-size="18" fill="white" y="46" xml:space="preserve">ocs_bench</tspan>
+          <tspan font-family="Montserrat" font-size="18" fill="white" y="46" xml:space="preserve">)</tspan>
+        </text>
+      </g>
+      <g id="Graphic_34">
+        <path d="M -417.0039 189.20506 L -302.0039 189.20506 C -297.58563 189.20506 -294.0039 192.78678 -294.0039 197.20506 L -294.0039 256.20506 C -294.0039 260.62333 -297.58563 264.20506 -302.0039 264.20506 L -417.0039 264.20506 C -421.4222 264.20506 -425.0039 260.62333 -425.0039 256.20506 L -425.0039 197.20506 C -425.0039 192.78678 -421.4222 189.20506 -417.0039 189.20506 Z" fill="#ffa900"/>
+        <text transform="translate(-420.0039 201.20506)" fill="white">
+          <tspan font-family="Montserrat" font-size="24" fill="white" x="37.496" y="23" xml:space="preserve">CTF</tspan>
+          <tspan font-family="Montserrat" font-size="18" fill="white" x="5.97009" y="46" xml:space="preserve">(</tspan>
+          <tspan font-family="Courier New" font-size="18" fill="white" y="46" xml:space="preserve">ocs_bench</tspan>
+          <tspan font-family="Montserrat" font-size="18" fill="white" y="46" xml:space="preserve">)</tspan>
+        </text>
+      </g>
+      <g id="Graphic_39">
+        <path d="M -417.0039 308.09178 L -302.0039 308.09178 C -297.58563 308.09178 -294.0039 311.6735 -294.0039 316.09178 L -294.0039 375.09178 C -294.0039 379.51005 -297.58563 383.09178 -302.0039 383.09178 L -417.0039 383.09178 C -421.4222 383.09178 -425.0039 379.51005 -425.0039 375.09178 L -425.0039 316.09178 C -425.0039 311.6735 -421.4222 308.09178 -417.0039 308.09178 Z" fill="#ffa900"/>
+        <text transform="translate(-420.0039 320.09178)" fill="white">
+          <tspan font-family="Montserrat" font-size="24" fill="white" x="37.496" y="23" xml:space="preserve">CTF</tspan>
+          <tspan font-family="Montserrat" font-size="18" fill="white" x="5.97009" y="46" xml:space="preserve">(</tspan>
+          <tspan font-family="Courier New" font-size="18" fill="white" y="46" xml:space="preserve">ocs_bench</tspan>
+          <tspan font-family="Montserrat" font-size="18" fill="white" y="46" xml:space="preserve">)</tspan>
+        </text>
+      </g>
+      <g id="Graphic_40">
+        <text transform="translate(-367.2679 265.20506)" fill="black">
+          <tspan font-family="Montserrat" font-size="24" fill="black" x="0" y="23" xml:space="preserve">…</tspan>
+        </text>
+      </g>
+      <g id="Graphic_32">
+        <path d="M -150.56312 92.3574 L 83.43688 92.3574 C 87.85516 92.3574 91.43688 95.93912 91.43688 100.3574 L 91.43688 284.3574 C 91.43688 288.77568 87.85516 292.3574 83.43688 292.3574 L -150.56312 292.3574 C -154.9814 292.3574 -158.56312 288.77568 -158.56312 284.3574 L -158.56312 100.3574 C -158.56312 95.93912 -154.9814 92.3574 -150.56312 92.3574 Z" fill="white"/>
+        <path d="M -150.56312 92.3574 L 83.43688 92.3574 C 87.85516 92.3574 91.43688 95.93912 91.43688 100.3574 L 91.43688 284.3574 C 91.43688 288.77568 87.85516 292.3574 83.43688 292.3574 L -150.56312 292.3574 C -154.9814 292.3574 -158.56312 288.77568 -158.56312 284.3574 L -158.56312 100.3574 C -158.56312 95.93912 -154.9814 92.3574 -150.56312 92.3574 Z" stroke="#1a2746" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"/>
+        <text transform="translate(-148.56312 102.3574)" fill="black">
+          <tspan font-family="Montserrat" font-size="24" fill="black" x="2.464" y="23" xml:space="preserve">System Under Test </tspan>
+          <tspan font-family="Montserrat" font-size="24" fill="black" x="83.5" y="52" xml:space="preserve">(SUT)</tspan>
+        </text>
+      </g>
+      <g id="Graphic_26">
+        <path d="M -91.06312 189.20506 L 23.93688 189.20506 C 28.355157 189.20506 31.93688 192.78678 31.93688 197.20506 L 31.93688 256.20506 C 31.93688 260.62333 28.355157 264.20506 23.93688 264.20506 L -91.06312 264.20506 C -95.4814 264.20506 -99.06312 260.62333 -99.06312 256.20506 L -99.06312 197.20506 C -99.06312 192.78678 -95.4814 189.20506 -91.06312 189.20506 Z" fill="#ffa900"/>
+        <text transform="translate(-94.06312 201.20506)" fill="white">
+          <tspan font-family="Montserrat" font-size="24" fill="white" x="34.472" y="23" xml:space="preserve">OCS</tspan>
+          <tspan font-family="Montserrat" font-size="18" fill="white" x="38.375363" y="46" xml:space="preserve">(</tspan>
+          <tspan font-family="Courier New" font-size="18" fill="white" y="46" xml:space="preserve">ocs</tspan>
+          <tspan font-family="Montserrat" font-size="18" fill="white" y="46" xml:space="preserve">)</tspan>
+        </text>
+      </g>
+      <g id="Line_3">
+        <line x1="-294.0039" y1="149.31959" x2="-99.06312" y2="207.24287" stroke="#aaa" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_2">
+        <rect x="-206.01408" y="167.27794" width="25.67" height="24" fill="white"/>
+        <text transform="translate(-205.01408 168.27794)" fill="black">
+          <tspan font-family="Montserrat" font-size="18" fill="black" x="0" y="17" xml:space="preserve">Gy</tspan>
+        </text>
+      </g>
+      <g id="Line_36">
+        <line x1="-294.0039" y1="226.70506" x2="-99.06312" y2="226.70506" stroke="#aaa" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_35">
+        <rect x="-207.61745" y="214.70506" width="25.67" height="24" fill="white"/>
+        <text transform="translate(-206.61745 215.70506)" fill="black">
+          <tspan font-family="Montserrat" font-size="18" fill="black" x="0" y="17" xml:space="preserve">Gy</tspan>
+        </text>
+      </g>
+      <g id="Line_38">
+        <line x1="-294.0039" y1="321.7007" x2="-99.06312" y2="250.59614" stroke="#aaa" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+      </g>
+      <g id="Graphic_37">
+        <rect x="-207.44644" y="273.44734" width="25.67" height="24" fill="white"/>
+        <text transform="translate(-206.44644 274.44734)" fill="black">
+          <tspan font-family="Montserrat" font-size="18" fill="black" x="0" y="17" xml:space="preserve">Gy</tspan>
+        </text>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -14,6 +14,8 @@
 This application is intended to be used to benchmark SigScale OCS
 for subscriber authentication, authorization, registration and charging.
 
+<img id="testing" class="diagram" src="testing.svg" alt="Testing" />
+
 ==Operation==
 The {@link //ocs_bench. ocs_bench} application shall exercise the
 REST and DIAMETER interfaces of the <i>SigScale OCS</i> system under
