@@ -63,11 +63,13 @@ beamdir=$ERLANG_INSTALL_LIB_DIR/$PACKAGE_NAME-$PACKAGE_VERSION/ebin
 docdir=$ERLANG_INSTALL_LIB_DIR/$PACKAGE_NAME-$PACKAGE_VERSION/doc
 scriptdir=$ERLANG_INSTALL_LIB_DIR/$PACKAGE_NAME-$PACKAGE_VERSION/priv/bin
 reldir=$ERLANG_INSTALL_LIB_DIR/../releases
+envdir=/etc/default
 AC_SUBST(appdir)
 AC_SUBST(erldir)
 AC_SUBST(beamdir)
 AC_SUBST(scriptdir)
 AC_SUBST(reldir)
+AC_SUBST(envdir)
 
 
 ##
