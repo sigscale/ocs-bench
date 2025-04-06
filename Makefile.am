@@ -12,25 +12,27 @@ endif
 
 script_SCRIPTS = scripts/install_release.sh
 
+RELEASE_NAME = $(PACKAGE_NAME)-$(RELEASE_NAME)
+
 .PHONY: release
-release: $(PACKAGE_VERSION).tar.gz
+release: $(RELEASE_NAME).tar.gz
 
-$(PACKAGE_VERSION).rel:	$(PACKAGE_NAME).rel
-	cp $(PACKAGE_NAME).rel $(PACKAGE_VERSION).rel
+$(RELEASE_NAME).rel:	$(PACKAGE_NAME).rel
+	cp $(PACKAGE_NAME).rel $(RELEASE_NAME).rel
 
-$(PACKAGE_VERSION).tar.gz: $(PACKAGE_VERSION).rel sys.config
+$(RELEASE_NAME).tar.gz: $(RELEASE_NAME).rel sys.config
 	$(ERL) -noinput \
-		-eval "systools:make_script(\"$(PACKAGE_VERSION)\")" \
-		-eval "systools:make_tar(\"$(PACKAGE_VERSION)\", [{dirs, [include]}])" \
+		-eval "systools:make_script(\"$(RELEASE_NAME)\")" \
+		-eval "systools:make_tar(\"$(RELEASE_NAME)\", [{dirs, [include]}])" \
 		-s init stop
 
-install-data-hook: $(PACKAGE_VERSION).tar.gz
+install-data-hook: $(RELEASE_NAME).tar.gz
 	$(MKDIR_P) $(DESTDIR)/$(reldir)
 	$(INSTALL_DATA) $< $(DESTDIR)/$(reldir)
 
-EXTRA_DIST = $(PACKAGE_VERSION).tar.gz
+EXTRA_DIST = $(RELEASE_NAME).tar.gz
 
-CLEANFILES = $(PACKAGE_VERSION).script $(PACKAGE_VERSION).boot $(PACKAGE_VERSION).tar.gz
+CLEANFILES = $(RELEASE_NAME).script $(RELEASE_NAME).boot $(RELEASE_NAME).tar.gz
 
 install-data-hook: $(RELEASE_NAME).tar.gz
 	$(MKDIR_P) $(DESTDIR)/$(reldir)
