@@ -10,6 +10,8 @@ systemdsystemunit_DATA = scripts/ocs_bench.service
 env_DATA = scripts/ocs_bench
 endif
 
+script_SCRIPTS = scripts/install_release.sh
+
 .PHONY: release
 release: $(PACKAGE_VERSION).tar.gz
 
