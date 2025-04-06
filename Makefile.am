@@ -32,3 +32,8 @@ EXTRA_DIST = $(PACKAGE_VERSION).tar.gz
 
 CLEANFILES = $(PACKAGE_VERSION).script $(PACKAGE_VERSION).boot $(PACKAGE_VERSION).tar.gz
 
+install-data-hook: $(RELEASE_NAME).tar.gz
+	$(MKDIR_P) $(DESTDIR)/$(reldir)
+	$(INSTALL_DATA) $< $(DESTDIR)/$(reldir)
+	$(MKDIR_P) $(DESTDIR)/$(otpdir)/log
+
