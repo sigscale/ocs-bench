@@ -3,6 +3,13 @@
 @title %DESCRIPTION%
 @doc This application implements a DIAMETER client for load testing.
 
+==Table of Contents==
+<ul>
+	<li><a href="#Intoduction">Introduction</a><br /></li>
+	<li><a href="#Operation">Operation</a><br /></li>
+	<li><a href="#Configuration">Configuration</a><br /></li>
+</ul>
+
 ==Introduction==
 This application is intended to be used to benchmark SigScale OCS
 for subscriber authentication, authorization, registration and charging.
