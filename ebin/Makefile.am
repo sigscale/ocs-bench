@@ -4,8 +4,8 @@
 ## Process this file with automake to produce Makefile.in
 
 appdir = $(beamdir)
-app_DATA = ocs_bench.app
-EXTRA_DIST = ocs_bench.app
+app_DATA = ocs_bench.app ocs_bench.appup
+EXTRA_DIST = ocs_bench.app ocs_bench.app
 
 beam_DATA = ocs_bench_app.beam \
 		ocs_bench_sup.beam \

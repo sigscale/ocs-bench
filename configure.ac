@@ -78,6 +78,8 @@ AC_SUBST(envdir)
 AC_ERLANG_CHECK_LIB([kernel], [], [AC_MSG_ERROR([kernel was not found!])])
 AC_ERLANG_CHECK_LIB([stdlib], [], [AC_MSG_ERROR([stdlib was not found!])])
 AC_ERLANG_CHECK_LIB([sasl], [], [AC_MSG_ERROR([sasl was not found!])])
+AM_CONDITIONAL([MAKE_TAR_EXTRA_FILES],
+		[AS_VERSION_COMPARE([$ERLANG_LIB_VER_sasl], ["4.0"], [false], [true], [true])])
 AC_ERLANG_CHECK_LIB([mnesia], [], [AC_MSG_ERROR([mnesia was not found!])])
 AC_ERLANG_CHECK_LIB([compiler], [], [AC_MSG_ERROR([compiler was not found!])])
 AC_ERLANG_CHECK_LIB([crypto], [], [AC_MSG_ERROR([crypto was not found!])])
@@ -112,7 +114,10 @@ AC_ERLANG_CHECK_LIB([ocs], [], [AC_MSG_ERROR([ocs was not found!])])
 ##
 ## Output:  create output files
 ##
-
+AS_VERSION_COMPARE([$ERLANG_LIB_VER_sasl], ["4.2"],
+		[RELDIR="releases"], [RELDIR="/home/otp/releases"], [RELDIR="/home/otp/releases"])
+AC_SUBST([RELDIR])
 AC_OUTPUT([Makefile ebin/Makefile doc/Makefile
-		$PACKAGE_NAME.rel sys.config])
+		sys.config $PACKAGE_NAME.rel ebin/$PACKAGE_NAME.appup
+		scripts/ocs_bench scripts/ocs_bench.service])
 

@@ -1,5 +1,5 @@
 [Unit]
-Description="SigScale OCS Bench"
+Description=SigScale OCS Bench
 Documentation="https://github.com/sigscale/ocs-bench"
 After=epmd.service epmd.socket
 
@@ -9,10 +9,9 @@ Group=otp
 WorkingDirectory=/home/otp
 RuntimeDirectory=ocs_bench
 RuntimeDirectoryMode=0750
+LimitNOFILE=4096
 EnvironmentFile=/etc/default/ocs_bench
-ExecStart=/usr/lib/erlang/bin/run_erl -daemon /run/ocs_bench/ log \
-                'ERL_LIBS=lib exec ${ROOTDIR}/bin/start_erl ${ROOTDIR} releases \
-                ${START_ERL_DATA} -boot_var OTPHOME . +K true +A 32 +Bi -sname ${NODENAME}'
+ExecStart=@ERLANG_ROOT_DIR@/bin/run_erl -daemon /run/ocs_bench/ log 'ERL_LIBS=lib exec ${ROOTDIR}/bin/start_erl ${ROOTDIR} ${RELDIR} ${START_ERL_DATA} -boot_var OTPHOME . +K true +A 32 +Bi -sname ${NODENAME}'
 GuessMainPID=no
 Type=forking
 Restart=always
