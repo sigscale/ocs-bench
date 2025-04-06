@@ -12,7 +12,7 @@ endif
 
 script_SCRIPTS = scripts/install_release.sh
 
-RELEASE_NAME = $(PACKAGE_NAME)-$(RELEASE_NAME)
+RELEASE_NAME = $(PACKAGE_NAME)-$(PACKAGE_VERSION)
 
 .PHONY: release
 release: $(RELEASE_NAME).tar.gz
