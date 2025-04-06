@@ -17,7 +17,7 @@
 			ocs_bench_rest_fsm_sup,
 			ocs_bench_diameter_service_fsm_sup,
 			ocs_bench_diameter_ro_fsm_sup]},
-	{applications, [diameter]},
+	{applications, [diameter, inets]},
 	{env,
 			[{active, 1000},
 			{mean, 1},
