@@ -1,3 +1,9 @@
+2025-04-07  Vance Shipley <vances@sigscale.org>
+
+	 * separate application and package name variables
+	 * modernize sigscale css
+	 * update copyright
+
 2025-04-06  Vance Shipley <vances@sigscale.org>
 
 	* debian package installation instructions
