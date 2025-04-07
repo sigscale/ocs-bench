@@ -120,7 +120,7 @@ init([Address]) ->
 %% @private
 %%
 client_request(enter = _EventType, client_request = _EventContent, Data) ->
-	?LOG_INFO("Begin phase 0: add REST client"),
+	?LOG_NOTICE("Begin phase 0: add REST client"),
 	{keep_state, Data#statedata{count = 0}};
 client_request(enter, client_response, _Data) ->
 	keep_state_and_data;
@@ -181,7 +181,7 @@ client_response(info = _EventType,
 		{ok, #{"id" := Id}} ->
 			case inet:parse_address(Id) of
 				{ok, Address} ->
-					?LOG_INFO("End phase 0: added REST client"),
+					?LOG_NOTICE("End phase 0: added REST client"),
 					NewData = Data#statedata{address = Address},
 					{next_state, service_request, NewData,
 							timeout(Start, start, NewData)};
@@ -209,14 +209,14 @@ client_response(info = _EventType, {http, {RequestId, {error, Reason}}},
 %% @private
 %%
 service_request(enter = _EventType, client_response = _EventContent, Data) ->
-	?LOG_INFO("Begin phase 1: add service identifiers"),
+	?LOG_NOTICE("Begin phase 1: add service identifiers"),
 	{keep_state, Data#statedata{count = 0, cursor = ets:first(subscriber)}};
 service_request(enter, service_response, _Data) ->
 	keep_state_and_data;
 service_request(state_timeout, next,
 		#statedata{count = Count, active = Active} = Data)
 		when Count > Active ->
-	?LOG_INFO("End phase 1: added ~b service identifiers", [Count]),
+	?LOG_NOTICE("End phase 1: added ~b service identifiers", [Count]),
 	Start = erlang:system_time(millisecond),
 	{next_state, product_request, Data,  timeout(Start, start, Data)};
 service_request(state_timeout, _EventContent,
@@ -303,13 +303,13 @@ service_response(info = _EventType, {http, {RequestId, {error, Reason}}},
 %% @private
 %%
 product_request(enter = _EventType, service_request = _EventContent, Data) ->
-	?LOG_INFO("Begin phase 2: add product subscriptions"),
+	?LOG_NOTICE("Begin phase 2: add product subscriptions"),
 	{keep_state, Data#statedata{count = 0, cursor = ets:first(subscriber)}};
 product_request(enter, product_response, _Data) ->
 	keep_state_and_data;
 product_request(state_timeout, next,
 		#statedata{cursor = '$end_of_table', count = Count} = Data) ->
-	?LOG_INFO("End phase 2: added ~b product subscriptions", [Count]),
+	?LOG_NOTICE("End phase 2: added ~b product subscriptions", [Count]),
 	Start = erlang:system_time(millisecond),
 	{next_state, balance_request, Data, timeout(Start, start, Data)};
 product_request(state_timeout, _EventContent,
@@ -380,14 +380,14 @@ product_response(info = _EventType, {http, {RequestId, {error, Reason}}},
 %% @private
 %%
 balance_request(enter = _EventType, product_request = _EventContent, Data) ->
-	?LOG_INFO("Begin phase 3: add balance buckets"),
+	?LOG_NOTICE("Begin phase 3: add balance buckets"),
 	{keep_state, Data#statedata{count = 0, cursor = ets:first(subscriber)}};
 balance_request(enter, balance_response, _Data) ->
 	keep_state_and_data;
 balance_request(state_timeout, next,
 		#statedata{cursor = '$end_of_table', count = Count,
 		address = Address} = Data) ->
-	?LOG_INFO("End phase 3: added ~b balance buckets", [Count]),
+	?LOG_NOTICE("End phase 3: added ~b balance buckets", [Count]),
 	case supervisor:start_child(ocs_bench_diameter_service_fsm_sup, [[Address], []]) of
 		{ok, Fsm} ->
 			ets:give_away(subscriber, Fsm, []),

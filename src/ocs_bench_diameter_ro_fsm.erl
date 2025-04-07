@@ -119,7 +119,7 @@ init(_Args) ->
 %% @private
 %%
 ccr(enter = _EventType, ccr = _EventContent, Data) ->
-	?LOG_INFO("Begin phase 4: start user sessions"),
+	?LOG_NOTICE("Begin phase 4: start user sessions"),
 	{keep_state, Data#statedata{count = 0, cursor = ets:first(subscriber)}};
 ccr(enter, _EventContent,
 		#statedata{cursor = '$end_of_table'} = Data) ->

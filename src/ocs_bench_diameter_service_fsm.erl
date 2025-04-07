@@ -146,7 +146,7 @@ wait_for_peer(info, #diameter_event{info = Event, service = Service},
 		#statedata{service = Service, transport = Ref} = Data)
 		when element(1, Event) == up, element(2, Event) == Ref ->
 	{_PeerRef, #diameter_caps{origin_host = {_, Peer}}} = element(3, Event),
-	?LOG_INFO("DIAMETER peer connected~nservice: ~w~npeer: ~p~n",
+	?LOG_NOTICE("DIAMETER peer connected~nservice: ~w~npeer: ~p~n",
 			[Service, binary_to_list(Peer)]),
 	{next_state, connected, Data};
 wait_for_peer(info, #diameter_event{info = {watchdog, Ref, _PeerRef,
@@ -155,7 +155,7 @@ wait_for_peer(info, #diameter_event{info = {watchdog, Ref, _PeerRef,
 	{next_state, wait_for_peer, Data};
 wait_for_peer(info, #diameter_event{info = Event, service = Service},
 		#statedata{service = Service} = Data) ->
-	?LOG_INFO("DIAMETER event~nservice: ~w~nevent: ~p~n", [Service, Event]),
+	?LOG_NOTICE("DIAMETER event~nservice: ~w~nevent: ~p~n", [Service, Event]),
 	{next_state, wait_for_peer, Data};
 wait_for_peer(info, {'EXIT', _Pid, noconnection}, Data) ->
 	{stop, noconnection, Data};
@@ -182,7 +182,7 @@ connected(enter = _EventType, wait_for_peer = _EventContent, _Data) ->
 connected(info, #diameter_event{info = {down, Ref, Peer, _Config},
 		service = Service}, #statedata{transport = Ref} = Data) ->
 	{_PeerRef, #diameter_caps{origin_host = {_, Peer1}}} = Peer,
-	?LOG_INFO("DIAMETER peer disconnected~nservice: ~w~npeer: ~p~n",
+	?LOG_NOTICE("DIAMETER peer disconnected~nservice: ~w~npeer: ~p~n",
 			[Service, binary_to_list(Peer1)]),
 	{stop, down, Data};
 connected(info, #diameter_event{info = {watchdog, Ref, _PeerRef,
@@ -191,7 +191,7 @@ connected(info, #diameter_event{info = {watchdog, Ref, _PeerRef,
 	{next_state, connected, Data};
 connected(info, #diameter_event{info = Event, service = Service},
 		#statedata{service = Service} = Data) ->
-	?LOG_INFO("DIAMETER event~nservice: ~w~nevent: ~p~n", [Service, Event]),
+	?LOG_NOTICE("DIAMETER event~nservice: ~w~nevent: ~p~n", [Service, Event]),
 	{next_state, connected, Data};
 connected(info, {'EXIT', _Pid, noconnection}, Data) ->
 	{stop, noconnection, Data};
