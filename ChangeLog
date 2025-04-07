@@ -1,5 +1,8 @@
 2025-04-07  Vance Shipley <vances@sigscale.org>
 
+	* increase logger level to notice
+	* add missing otp directory configuration
+	* correct release version in release specification
 	* separate application and package name variables
 	* modernize sigscale css
 	* update copyright
