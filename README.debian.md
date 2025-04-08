@@ -9,9 +9,9 @@
 
 ## Install SigScale OCS Bench:
 	sudo apt install sigscale-ocs-bench
-	sudo systemctl enable sigscale-ocs-bench
-	sudo systemctl start sigscale-ocs-bench
-	sudo systemctl status sigscale-ocs-bench
+	sudo systemctl enable ocs_bench
+	sudo systemctl start ocs_bench
+	sudo systemctl status ocs_bench
 
 ## Support
 Contact <support@sigscale.com> for further assistance.
