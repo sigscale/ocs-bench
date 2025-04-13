@@ -1,3 +1,8 @@
+2025-04-13  Vance Shipley <vances@sigscale.org>
+
+	* accept string() for remote_address
+	* correct systemd instructions in readme
+
 2025-04-07  Vance Shipley <vances@sigscale.org>
 
 	* increase logger level to notice
