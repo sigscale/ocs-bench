@@ -66,7 +66,7 @@ application environment variables (`~/releases/<VERSION>/sys.config'):
 	<dt>`local_address'</dt>
 		<dd>Local IP address to bind a specific interface (optional).</dd>
 	<dt>`remote_address'</dt>
-		<dd>IP address of the system under test. (default: `{127,0,0,1}')</dd>
+		<dd>IP address (inet:ip_address() or string()) of the system under test. (default: `{127,0,0,1}')</dd>
 	<dt>`remote_port'</dt>
 		<dd>IP port number DIAMETER service of the system under test. (default: `3868')</dd>
 </dl>

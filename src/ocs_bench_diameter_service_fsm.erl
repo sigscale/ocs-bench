@@ -264,7 +264,13 @@ code_change(_OldVsn, OldState, OldData, _Extra) ->
 %% @doc Returns options for a DIAMETER transport layer.
 %% @hidden
 transport_options(Transport, Address) ->
-	{ok, RemoteAddress} = application:get_env(remote_address),
+	RemoteAddress = case application:get_env(remote_address) of
+		{ok, IPAddress} when is_tuple(IPAddress) ->
+			IPAddress;
+		{ok, StringAddress} when is_list(StringAddress) ->
+			{ok, IPAddress} = inet:parse_address(StringAddress),
+			IPAddress
+	end,
 	{ok, RemotePort} = application:get_env(remote_port),
 	Opts = [{transport_module, Transport},
 			{transport_config, [{reuseaddr, true}, {ip, Address},
