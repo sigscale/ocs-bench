@@ -136,7 +136,7 @@ ccr(state_timeout, _EventContent,
 		dest_realm = DestinationRealm} = Data) ->
 	Start = erlang:system_time(millisecond),
 	case ets:lookup(subscriber, SubscriberId) of
-		[{_, #{ccaPpending := true} = _Subscriber}] ->
+		[{_, #{pending := true} = _Subscriber}] ->
 			NewData = Data#statedata{cursor = ets:next(subscriber, SubscriberId)},
 			{keept_state, NewData, timeout(Start, next, NewData)};
 		[{_, #{} = Subscriber}] ->
