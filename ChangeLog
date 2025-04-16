@@ -1,5 +1,9 @@
 2025-04-13  Vance Shipley <vances@sigscale.org>
 
+	* typo in matching pending cca
+
+2025-04-13  Vance Shipley <vances@sigscale.org>
+
 	* accept string() for remote_address
 	* correct systemd instructions in readme
 

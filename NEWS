@@ -1,4 +1,8 @@
-April 133 2025
+April 16, 2025
+--------------
+	- Fixed bug in preventing sending CCR while CCA pending
+
+April 13, 2025
 --------------
 	- Friendly remote address configuration
 
